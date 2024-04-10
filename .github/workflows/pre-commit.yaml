@@ -19,5 +19,6 @@ jobs:
       - shell: bash
         run: |
           echo "$PATH"
+          ls -la "$HOME/.local/bin"
           terraform-docs -v
       - uses: pre-commit/action@v3.0.1
