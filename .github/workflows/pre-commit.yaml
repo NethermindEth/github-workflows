@@ -13,12 +13,6 @@ jobs:
           curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz
           chmod +x terraform-docs
-          mv terraform-docs "$HOME/.local/bin"
+          mv terraform-docs "$HOME/.local/bin/terraform-docs"
           rm terraform-docs.tar.gz
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - shell: bash
-        run: |
-          echo "$PATH"
-          ls -la "$HOME/.local/bin"
-          terraform-docs -v
       - uses: pre-commit/action@v3.0.1
