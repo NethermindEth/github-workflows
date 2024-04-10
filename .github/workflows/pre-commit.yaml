@@ -11,9 +11,18 @@ jobs:
         name: Install terraform-docs
         run: |
           mkdir -p "$HOME/.local/bin" downloads
-          curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
-          tar -xzf terraform-docs.tar.gz -C downloads
+          curl -Lso ./downloads/terraform-docs.tar.gz \
+            https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
+          tar -xzf downloads/terraform-docs.tar.gz -C downloads
           chmod +x downloads/terraform-docs
           mv downloads/terraform-docs "$HOME/.local/bin/terraform-docs"
-          rm -rf downloads terraform-docs.tar.gz
+          rm -rf downloads
+      - shell: bash
+        name: Install tflint
+        run: |
+          mkdir -p "$HOME/.local/bin" downloads
+          curl -Lso ./downloads/install_linux.sh \
+            https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh
+          TFLINT_INSTALL_PATH="$HOME/.local/bin" bash ./downloads/install_linux.sh
+          rm -rf downloads
       - uses: pre-commit/action@v3.0.1
