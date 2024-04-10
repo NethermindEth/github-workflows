@@ -16,4 +16,8 @@ jobs:
           mv terraform-docs "$HOME/.local/bin"
           rm terraform-docs.tar.gz
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - shell: bash
+        run: |
+          echo "$PATH"
+          terraform-docs -v
       - uses: pre-commit/action@v3.0.1
