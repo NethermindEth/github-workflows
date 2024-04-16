@@ -4,11 +4,17 @@ on:
       access-token:
         description: 'A token passed from the caller workflow'
         required: true
+    outputs:
+      version:
+        description: "Computed repository version"
+        value: ${{ jobs.bump_version.outputs.version }}
 
 jobs:
   bump_version:
-    runs-on: ubuntu-latest
     name: "Bump version and create changelog with commitizen"
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.cz.outputs.version }}
     steps:
       - name: Check out
         uses: actions/checkout@v3
