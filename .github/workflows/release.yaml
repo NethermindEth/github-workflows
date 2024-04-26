@@ -4,13 +4,7 @@ on:
       releaseType:
         required: true
         type: string
-      packageName:
-        required: true
-        type: string
-      defaultBranch:
-        required: false
-        default: main
-        type: string
+
     outputs:
       releases_created:
         value: ${{ jobs.version.outputs.releases_created }}
