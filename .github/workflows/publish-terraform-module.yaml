@@ -1,0 +1,49 @@
+on:
+  workflow_call:
+    inputs:
+      jfrog-url:
+        description: 'URL of Artifactory server'
+        type: string
+        default: 'nethermind.jfrog.io'
+      module-name:
+        description: 'Name of Terraform module'
+        type: string
+        required: true
+      module-version:
+        description: 'Version of Terraform module'
+        type: string
+        required: true
+    secrets:
+      artifactory-access-token:
+        description: 'A token used to communicate with Artifactory'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: jfrog/setup-jfrog-cli@v4
+      - name: Configure JFrog CLI
+        shell: bash
+        env:
+          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory-access-token }}
+          JFROG_URL: ${{ inputs.jfrog-url }}
+        run: |
+          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
+            --url="https://${JFROG_URL}" \
+            --interactive=false \
+            --access-token-stdin
+      - name: Configure Terraform registry
+        shell: bash
+        run: jf tfc --repo-deploy=local-angkor-terraform-module
+      - name: Publish Terraform module
+        shell: bash
+        run: |
+          mkdir -p package
+          rsync -Rr --exclude=".*" --exclude="package" ./ package/${{ inputs.module-name }}
+          cd package/${{ inputs.module-name }}
+          jf terraform publish \
+            --namespace=nethermind \
+            --provider=saas \
+            --tag ${{ inputs.module-version }}
