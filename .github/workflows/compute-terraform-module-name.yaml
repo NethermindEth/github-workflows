@@ -21,7 +21,7 @@ jobs:
       - id: compute
         shell: bash
         run: |
-          REPOSITORY_NAME=${{ input.repository_name }}
+          REPOSITORY_NAME=${{ inputs.repository_name }}
           REPOSITORY_NAME=${REPOSITORY_NAME#*/} 
           REPOSITORY_NAME=${REPOSITORY_NAME#*-}
           PROVIDER_NAME=${REPOSITORY_NAME#*-}
