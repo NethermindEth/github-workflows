@@ -1,0 +1,30 @@
+on:
+  workflow_call:
+    inputs:
+      repository_name:
+        description: 'Name of Terraform repository'
+        type: string
+        required: true
+    outputs:
+      module_name:
+        value: ${{ jobs.compute_name.outputs.module_name }}
+      provider_name:
+        value: ${{ jobs.compute_name.outputs.provider_name }}
+
+jobs:
+  compute_name:
+    runs-on: ubuntu-latest
+    outputs:
+      module_name: ${{ steps.compute.outputs.module_name }}
+      provider_name: ${{ steps.compute.outputs.provider_name }}
+    steps:
+      - id: compute
+        shell: bash
+        run: |
+          REPOSITORY_NAME=${{ input.repository_name }}
+          REPOSITORY_NAME=${REPOSITORY_NAME#*/} 
+          REPOSITORY_NAME=${REPOSITORY_NAME#*-}
+          PROVIDER_NAME=${REPOSITORY_NAME#*-}
+          MODULE_NAME=${REPOSITORY_NAME%-*}
+          echo "module_name=${MODULE_NAME}" >> $GITHUB_OUTPUT
+          echo "provider_name=${PROVIDER_NAME}" >> $GITHUB_OUTPUT
