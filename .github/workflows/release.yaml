@@ -8,6 +8,8 @@ on:
     outputs:
       releases_created:
         value: ${{ jobs.version.outputs.releases_created }}
+      release_created:
+        value: ${{ jobs.version.outputs.release_created }}
       upload_url:
         value: ${{ jobs.version.outputs.upload_url }}
       html_url:
@@ -32,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      release_created: ${{ steps.release.outputs.release_created }}
       upload_url: ${{ steps.release.outputs.upload_url }}
       html_url: ${{ steps.release.outputs.html_url }}
       tag_name: ${{ steps.release.outputs.tag_name }}
