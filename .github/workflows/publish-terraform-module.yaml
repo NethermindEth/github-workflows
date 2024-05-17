@@ -5,6 +5,10 @@ on:
         description: 'URL of Artifactory server'
         type: string
         default: 'nethermind.jfrog.io'
+      provider_name:
+        description: 'Name of Terraform provider'
+        type: string
+        required: true
       module_name:
         description: 'Name of Terraform module'
         type: string
@@ -45,5 +49,5 @@ jobs:
           cd package/${{ inputs.module_name }}
           jf terraform publish \
             --namespace=nethermind \
-            --provider=saas \
+            --provider=${{ inputs.provider_name }} \
             --tag ${{ inputs.module_version }}
