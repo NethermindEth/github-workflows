@@ -26,7 +26,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: jfrog/setup-jfrog-cli@v4
       - name: Configure JFrog CLI
         shell: bash
