@@ -15,21 +15,21 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: ./.github/workflows/release.yaml@main
+    uses: ./.github/workflows/release.yaml
     with:
       releaseType: terraform-module
 
   compute_name:
     needs: [ release ]
     if: needs.release.outputs.releases_created == 'true'
-    uses: ./.github/workflows/compute-terraform-module-name.yaml@main
+    uses: ./.github/workflows/compute-terraform-module-name.yaml
     with:
       repository_name: ${{ inputs.repositoryName }}
 
   publish:
     needs: [ release, compute_name ]
     if: needs.release.outputs.releases_created == 'true'
-    uses: ./.github/workflows/publish-terraform-module.yaml@main
+    uses: ./.github/workflows/publish-terraform-module.yaml
     with:
       provider_name: ${{ needs.compute_name.outputs.provider_name }}
       module_name: ${{ needs.compute_name.outputs.module_name }}
