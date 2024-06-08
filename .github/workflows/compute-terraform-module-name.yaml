@@ -24,7 +24,8 @@ jobs:
           REPOSITORY_NAME=${{ inputs.repository_name }}
           REPOSITORY_NAME=${REPOSITORY_NAME#*/} 
           REPOSITORY_NAME=${REPOSITORY_NAME#*-}
-          MODULE_NAME=${REPOSITORY_NAME#*-}
-          PROVIDER_NAME=${REPOSITORY_NAME%-*}
+          PROVIDER_AND_MODULE=${REPOSITORY_NAME#*-}
+          MODULE_NAME=${PROVIDER_AND_MODULE#*-}
+          PROVIDER_NAME=${PROVIDER_AND_MODULE%%-*}
           echo "module_name=${MODULE_NAME}" >> $GITHUB_OUTPUT
           echo "provider_name=${PROVIDER_NAME}" >> $GITHUB_OUTPUT
