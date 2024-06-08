@@ -1,7 +1,7 @@
 on:
   workflow_call:
     inputs:
-      repositoryName:
+      repository_name:
         description: 'Name of current repository'
         required: true
         type: string
@@ -24,7 +24,7 @@ jobs:
     if: needs.release.outputs.releases_created == 'true'
     uses: ./.github/workflows/compute-terraform-module-name.yaml
     with:
-      repository_name: ${{ inputs.repositoryName }}
+      repository_name: ${{ inputs.repository_name }}
 
   publish:
     needs: [ release, compute_name ]
