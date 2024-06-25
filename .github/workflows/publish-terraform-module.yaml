@@ -35,7 +35,7 @@ jobs:
           JFROG_URL: ${{ inputs.jfrog_url }}
         run: |
           echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
-            --url="https://${JFROG_URL}" \
+            --url="${JFROG_URL}" \
             --interactive=false \
             --access-token-stdin
       - name: Configure Terraform registry
