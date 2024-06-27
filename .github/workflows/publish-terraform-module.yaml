@@ -4,7 +4,7 @@ on:
       jfrog_url:
         description: 'URL of Artifactory server'
         type: string
-        default: 'nethermind.jfrog.io'
+        default: 'https://nethermind.jfrog.io'
       provider_name:
         description: 'Name of Terraform provider'
         type: string
