@@ -1,9 +1,15 @@
 on:
   workflow_call:
+    secrets:
+      artifactory_access_token:
+        description: 'A token used to communicate with Artifactory'
+        required: true
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
+    env:
+      TF_TOKEN_nethermind_jfrog_io: ${{ secrets.artifactory_access_token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
