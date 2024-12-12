@@ -1,0 +1,84 @@
+on:
+  workflow_call:
+    inputs:
+      docker_image_name:
+        description: 'Name of the Docker image'
+        required: true
+        type: string
+      docker_image_tag:
+        description: 'Tag for the Docker image'
+        required: true
+        type: string
+      jfrog_url:
+        description: 'URL of Artifactory server'
+        type: string
+        default: 'https://nethermind.jfrog.io'
+      platforms:
+        description: 'Platforms to build for (comma-separated)'
+        type: string
+        default: 'linux/amd64,linux/arm64'
+    secrets:
+      artifactory_access_token:
+        description: 'A token used to communicate with Artifactory'
+        required: true
+      artifactory_username:
+        description: 'Username for Artifactory authentication'
+        required: true
+
+jobs:
+  publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - uses: jfrog/setup-jfrog-cli@v4
+      - name: Configure JFrog CLI
+        shell: bash
+        env:
+          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory_access_token }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
+        run: |
+          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
+            --url="${JFROG_URL}" \
+            --interactive=false \
+            --access-token-stdin
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
+
+      - name: Login to JFrog
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        with:
+          registry: ${{ inputs.jfrog_url }}
+          username: ${{ secrets.artifactory_username }}
+          password: ${{ secrets.artifactory_access_token }}
+
+      - name: Build and Push
+        id: build_push
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        with:
+          context: .
+          platforms: ${{ inputs.platforms }}
+          push: true
+          tags: ${{ inputs.jfrog_url }}/${{ inputs.docker_image_name }}:${{ inputs.docker_image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: |
+            type=image,push=true
+            type=metadata,dest=metadata.json
+
+      - name: Collect Build Info
+        run: |
+          jf rt build-docker-create ${{ inputs.docker_image_name }} \
+            --image-file metadata.json \
+            --build-name=${{ inputs.docker_image_name }} \
+            --build-number=${{ inputs.docker_image_tag }}
+
+      - name: Publish Build Info
+        run: |
+          jf rt build-publish ${{ inputs.docker_image_name }} ${{ inputs.docker_image_tag }}
