@@ -1,8 +1,7 @@
 repos:
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.21.3
+    rev: v4.0.0
     hooks:
+      - id: commitizen
       - id: commitizen-branch
-        stages:
-        - post-commit
-        - push
+        stages: [pre-push]
