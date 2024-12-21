@@ -61,6 +61,7 @@ jobs:
 
       - name: Docker meta
         id: meta
+        if: inputs.promotion_type == ''
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
@@ -72,6 +73,7 @@ jobs:
 
       - name: Build and Push
         id: build_push
+        if: inputs.promotion_type == ''
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
         with:
           context: .
@@ -83,18 +85,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Validate Promotion Flow
-        if: inputs.promotion_type == 'to-staging' || inputs.promotion_type == 'to-prod'
-        run: |
-          if [[ "${{ inputs.promotion_type }}" != "to-staging" && "${{ inputs.promotion_type }}" != "to-prod" ]]; then
-            echo "Error: Invalid promotion type. Must be either 'to-staging' or 'to-prod'"
-            exit 1
-          fi
-          if [[ -z "${{ inputs.source_tag }}" ]]; then
-            echo "Error: source_tag is required for promotion"
-            exit 1
-          fi
-
       - name: Promote to Staging
         if: inputs.promotion_type == 'to-staging'
         run: |
@@ -104,7 +94,7 @@ jobs:
           REGISTRY="${{ steps.registry.outputs.url }}"
           IMAGE_NAME="${{ steps.registry.outputs.repo_name }}"
           
-          # Promote both specific tag and latest
+          # Promote version tag and latest
           for TAG in "${{ inputs.source_tag }}" "latest"; do
             source_image="${REGISTRY}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
             target_image="${REGISTRY}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
@@ -121,7 +111,7 @@ jobs:
           REGISTRY="${{ steps.registry.outputs.url }}"
           IMAGE_NAME="${{ steps.registry.outputs.repo_name }}"
           
-          # Promote both specific tag and latest
+          # Promote version tag and latest
           for TAG in "${{ inputs.source_tag }}" "latest"; do
             source_image="${REGISTRY}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
             target_image="${REGISTRY}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
