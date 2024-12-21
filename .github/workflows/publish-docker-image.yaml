@@ -101,13 +101,16 @@ jobs:
           SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-dev"
           TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
           
-          # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
-          source_image="${REGISTRY}/${SOURCE_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
-          target_image="${REGISTRY}/${TARGET_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
+          IMAGE_NAME="${{ steps.registry.outputs.repo_name }}"
           
-          echo "Promoting ${source_image} to ${target_image}"
-          docker buildx imagetools create -t "${target_image}" "${source_image}"
+          # Promote both specific tag and latest
+          for TAG in "${{ inputs.source_tag }}" "latest"; do
+            source_image="${REGISTRY}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
+            target_image="${REGISTRY}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
+            echo "Promoting ${source_image} to ${target_image}"
+            docker buildx imagetools create -t "${target_image}" "${source_image}"
+          done
 
       - name: Promote to Production
         if: inputs.promotion_type == 'to-prod'
@@ -115,13 +118,16 @@ jobs:
           SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
           TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-prod"
           
-          # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
-          source_image="${REGISTRY}/${SOURCE_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
-          target_image="${REGISTRY}/${TARGET_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
-
-          echo "Promoting ${source_image} to ${target_image}"
-          docker buildx imagetools create -t "${target_image}" "${source_image}"
+          IMAGE_NAME="${{ steps.registry.outputs.repo_name }}"
+          
+          # Promote both specific tag and latest
+          for TAG in "${{ inputs.source_tag }}" "latest"; do
+            source_image="${REGISTRY}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
+            target_image="${REGISTRY}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
+            echo "Promoting ${source_image} to ${target_image}"
+            docker buildx imagetools create -t "${target_image}" "${source_image}"
+          done
 
       - name: Record Promotion
         if: inputs.promotion_type == 'to-staging' || inputs.promotion_type == 'to-prod'
