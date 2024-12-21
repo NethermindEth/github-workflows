@@ -50,7 +50,7 @@ jobs:
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
           registry: ${{ inputs.jfrog_url }}
-          username: ${{ steps.topics.outputs.result }}
+          username: ${{ steps.topics.outputs.group_name }}
           password: ${{ secrets.artifactory_access_token }}
 
       - name: Set Registry URL and Repo Name
@@ -65,7 +65,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.result }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
+          images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -100,8 +100,8 @@ jobs:
       - name: Promote to Staging
         if: inputs.promotion_type == 'to-staging'
         run: |
-          SOURCE_REPO="${{ steps.topics.outputs.result }}-oci-local-dev"
-          TARGET_REPO="${{ steps.topics.outputs.result }}-oci-local-staging"
+          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-dev"
+          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
@@ -114,8 +114,8 @@ jobs:
       - name: Promote to Production
         if: inputs.promotion_type == 'to-prod'
         run: |
-          SOURCE_REPO="${{ steps.topics.outputs.result }}-oci-local-staging"
-          TARGET_REPO="${{ steps.topics.outputs.result }}-oci-local-prod"
+          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
+          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-prod"
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
