@@ -63,11 +63,17 @@ jobs:
           username: ${{ inputs.group_name }}
           password: ${{ secrets.artifactory_access_token }}
 
+      - name: Set Registry URL
+        id: registry
+        run: |
+          REGISTRY=$(echo "${{ inputs.jfrog_url }}" | sed 's|https://||')
+          echo "url=$REGISTRY" >> $GITHUB_OUTPUT
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ inputs.docker_image_name }}
+          images: ${{ steps.registry.outputs.url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ inputs.docker_image_name }}
           tags: |
             type=raw,value=${{ inputs.docker_image_tag }}
             type=raw,value=latest
@@ -118,8 +124,9 @@ jobs:
           
           if [[ -n "${{ inputs.source_tag }}" ]]; then
             # Promote specific tag
-            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            REGISTRY="${{ steps.registry.outputs.url }}"
+            source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
             
             echo "Promoting ${source_image} to ${target_image}"
             jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
@@ -136,8 +143,9 @@ jobs:
           
           if [[ -n "${{ inputs.source_tag }}" ]]; then
             # Promote specific tag
-            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            REGISTRY="${{ steps.registry.outputs.url }}"
+            source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
             
             echo "Promoting ${source_image} to ${target_image}"
             jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
