@@ -91,25 +91,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - uses: jfrog/setup-jfrog-cli@v4
-      - name: Configure JFrog CLI
-        if: inputs.promotion_type != ''
-        shell: bash
-        env:
-          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory_access_token }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-        run: |
-          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
-            --url="${JFROG_URL}" \
-            --access-token-stdin \
-            --user="${{ inputs.group_name }}" \
-            --interactive=false
-
       - name: Validate Promotion Flow
-        if: inputs.promotion_type != ''
+        if: inputs.promotion_type == 'to-staging' || inputs.promotion_type == 'to-prod'
         run: |
           if [[ "${{ inputs.promotion_type }}" != "to-staging" && "${{ inputs.promotion_type }}" != "to-prod" ]]; then
             echo "Error: Invalid promotion type. Must be either 'to-staging' or 'to-prod'"
+            exit 1
+          fi
+          if [[ -z "${{ inputs.source_tag }}" ]]; then
+            echo "Error: source_tag is required for promotion"
             exit 1
           fi
 
@@ -119,18 +109,13 @@ jobs:
           SOURCE_REPO="${{ inputs.group_name }}-oci-local-dev"
           TARGET_REPO="${{ inputs.group_name }}-oci-local-staging"
           
-          if [[ -n "${{ inputs.source_tag }}" ]]; then
-            # Promote specific tag
-            REGISTRY="${{ steps.registry.outputs.url }}"
-            source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            
-            echo "Promoting ${source_image} to ${target_image}"
-            jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
-          else
-            echo "Error: source_tag is required for promotion"
-            exit 1
-          fi
+          # Construct image references
+          REGISTRY="${{ steps.registry.outputs.url }}"
+          source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          
+          echo "Promoting ${source_image} to ${target_image}"
+          docker buildx imagetools create -t "${target_image}" "${source_image}"
 
       - name: Promote to Production
         if: inputs.promotion_type == 'to-prod'
@@ -138,21 +123,16 @@ jobs:
           SOURCE_REPO="${{ inputs.group_name }}-oci-local-staging"
           TARGET_REPO="${{ inputs.group_name }}-oci-local-prod"
           
-          if [[ -n "${{ inputs.source_tag }}" ]]; then
-            # Promote specific tag
-            REGISTRY="${{ steps.registry.outputs.url }}"
-            source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-            
-            echo "Promoting ${source_image} to ${target_image}"
-            jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
-          else
-            echo "Error: source_tag is required for promotion"
-            exit 1
-          fi
+          # Construct image references
+          REGISTRY="${{ steps.registry.outputs.url }}"
+          source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          
+          echo "Promoting ${source_image} to ${target_image}"
+          docker buildx imagetools create -t "${target_image}" "${source_image}"
 
       - name: Record Promotion
-        if: inputs.promotion_type != ''
+        if: inputs.promotion_type == 'to-staging' || inputs.promotion_type == 'to-prod'
         run: |
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "- From: ${{ inputs.promotion_type == 'to-staging' && 'dev' || 'staging' }}" >> $GITHUB_STEP_SUMMARY
