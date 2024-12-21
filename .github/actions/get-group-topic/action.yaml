@@ -1,0 +1,40 @@
+name: 'Get Group Topic'
+description: 'Gets the group name from repository topics (angkor, modular, nubia, research, core)'
+
+inputs:
+  allowed_topics:
+    description: 'Space-separated list of allowed topics'
+    default: 'angkor modular nubia research core'
+    required: true
+
+outputs:
+  group_name:
+    description: 'The matched group name from repository topics'
+    value: ${{ steps.topics.outputs.result }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get Repository Topics
+      id: topics
+      shell: bash
+      run: |
+        # Convert space-separated topics to grep pattern
+        pattern="^($(echo "${{ inputs.allowed_topics }}" | tr ' ' '|'))\$"
+        echo "Allowed topics pattern: $pattern"
+        
+        echo "Fetching repository topics..."
+        all_topics=$(gh api repos/${{ github.repository }}/topics --jq '.names[]')
+        echo "Repository topics: $all_topics"
+        
+        group_name=$(gh api repos/${{ github.repository }}/topics --jq '.names[]' | grep -E "$pattern" || echo "")
+        
+        if [ -z "$group_name" ]; then
+          echo "Error: Repository must have one of these topics:"
+          echo "${{ inputs.allowed_topics }}" | tr ' ' '\n'
+          exit 1
+        fi
+        echo "Found matching topic: $group_name"
+        echo "result=$group_name" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
