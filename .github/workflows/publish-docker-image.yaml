@@ -1,14 +1,6 @@
 on:
   workflow_call:
     inputs:
-      docker_image_name:
-        description: 'Name of the Docker image'
-        required: true
-        type: string
-      docker_image_tag:
-        description: 'Tag for the Docker image'
-        required: true
-        type: string
       group_name:
         description: 'Name of the Group (e.g. angkor)'
         required: true
@@ -63,19 +55,21 @@ jobs:
           username: ${{ inputs.group_name }}
           password: ${{ secrets.artifactory_access_token }}
 
-      - name: Set Registry URL
+      - name: Set Registry URL and Repo Name
         id: registry
         run: |
           REGISTRY=$(echo "${{ inputs.jfrog_url }}" | sed 's|https://||')
           echo "url=$REGISTRY" >> $GITHUB_OUTPUT
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.registry.outputs.url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ inputs.docker_image_name }}
+          images: ${{ steps.registry.outputs.url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ steps.registry.outputs.repo_name }}
           tags: |
-            type=raw,value=${{ inputs.docker_image_tag }}
+            type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
             type=raw,value=latest
 
       - name: Build and Push
@@ -111,8 +105,8 @@ jobs:
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
-          source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-          target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          source_image="${REGISTRY}/${SOURCE_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
+          target_image="${REGISTRY}/${TARGET_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
           
           echo "Promoting ${source_image} to ${target_image}"
           docker buildx imagetools create -t "${target_image}" "${source_image}"
@@ -125,8 +119,8 @@ jobs:
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
-          source_image="${REGISTRY}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
-          target_image="${REGISTRY}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+          source_image="${REGISTRY}/${SOURCE_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
+          target_image="${REGISTRY}/${TARGET_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
           
           echo "Promoting ${source_image} to ${target_image}"
           docker buildx imagetools create -t "${target_image}" "${source_image}"
@@ -137,7 +131,7 @@ jobs:
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "- From: ${{ inputs.promotion_type == 'to-staging' && 'dev' || 'staging' }}" >> $GITHUB_STEP_SUMMARY
           echo "- To: ${inputs.promotion_type == 'to-staging' && 'staging' || 'production'}" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: ${{ inputs.docker_image_name }}:${{ inputs.source_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary
