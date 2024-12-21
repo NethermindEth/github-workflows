@@ -36,7 +36,7 @@ jobs:
 
       - name: Get Group Topic
         id: topics
-        uses: ./.github/actions/get-group-topic
+        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@feat/docker-image-workflow
         with:
           allowed_topics: 'angkor modular nubia research core'
 
