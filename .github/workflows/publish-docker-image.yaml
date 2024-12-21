@@ -66,7 +66,9 @@ jobs:
           images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
           tags: |
             type=raw,value=latest
-            type=ref,event=tag
+            type=ref,event=branch
+            type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || inputs.source_tag }},enable=${{ github.ref_type == 'tag' || inputs.source_tag != '' }}
+            type=sha
 
       - name: Build and Push
         id: build_push
@@ -117,7 +119,7 @@ jobs:
           REGISTRY="${{ steps.registry.outputs.url }}"
           source_image="${REGISTRY}/${SOURCE_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
           target_image="${REGISTRY}/${TARGET_REPO}/${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}"
-          
+
           echo "Promoting ${source_image} to ${target_image}"
           docker buildx imagetools create -t "${target_image}" "${source_image}"
 
@@ -126,7 +128,7 @@ jobs:
         run: |
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "- From: ${{ inputs.promotion_type == 'to-staging' && 'dev' || 'staging' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- To: ${inputs.promotion_type == 'to-staging' && 'staging' || 'production'}" >> $GITHUB_STEP_SUMMARY
+          echo "- To: ${{ inputs.promotion_type == 'to-staging' && 'staging' || 'production' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Image: ${{ steps.registry.outputs.repo_name }}:${{ inputs.source_tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
