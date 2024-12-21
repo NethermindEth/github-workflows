@@ -25,12 +25,21 @@ on:
         description: 'Platforms to build for (comma-separated)'
         type: string
         default: 'linux/amd64,linux/arm64'
+      dockerfile_path:
+        description: 'Path to the Dockerfile'
+        type: string
+        default: 'Dockerfile'
+      promotion_type:
+        description: 'Type of promotion (to-staging/to-prod)'
+        type: string
+        required: false
+      source_tag:
+        description: 'Specific tag to promote'
+        type: string
+        required: false
     secrets:
       artifactory_access_token:
         description: 'A token used to communicate with Artifactory'
-        required: true
-      artifactory_username:
-        description: 'Username for Artifactory authentication'
         required: true
 
 jobs:
@@ -40,18 +49,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
-      - uses: jfrog/setup-jfrog-cli@v4
-      - name: Configure JFrog CLI
-        shell: bash
-        env:
-          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory_access_token }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-        run: |
-          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
-            --url="${JFROG_URL}" \
-            --interactive=false \
-            --access-token-stdin
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
@@ -63,30 +60,105 @@ jobs:
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
           registry: ${{ inputs.jfrog_url }}
-          username: ${{ secrets.artifactory_username }}
+          username: ${{ inputs.group_name }}
           password: ${{ secrets.artifactory_access_token }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ inputs.docker_image_name }}
+          tags: |
+            type=raw,value=${{ inputs.docker_image_tag }}
+            type=raw,value=latest
 
       - name: Build and Push
         id: build_push
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
         with:
           context: .
+          file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ inputs.docker_image_name }}:${{ inputs.docker_image_tag }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: |
             type=image,push=true
             type=metadata,dest=metadata.json
 
-      - name: Collect Build Info
+      - uses: jfrog/setup-jfrog-cli@v4
+      - name: Configure JFrog CLI
+        if: inputs.promotion_type != ''
+        shell: bash
+        env:
+          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory_access_token }}
+          JFROG_URL: ${{ inputs.jfrog_url }}
         run: |
-          jf rt build-docker-create ${{ inputs.docker_image_name }} \
-            --image-file metadata.json \
-            --build-name=${{ inputs.docker_image_name }} \
-            --build-number=${{ inputs.docker_image_tag }}
+          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
+            --url="${JFROG_URL}" \
+            --access-token-stdin \
+            --user="${{ inputs.group_name }}" \
+            --interactive=false
 
-      - name: Publish Build Info
+      - name: Validate Promotion Flow
+        if: inputs.promotion_type != ''
         run: |
-          jf rt build-publish ${{ inputs.docker_image_name }} ${{ inputs.docker_image_tag }}
+          if [[ "${{ inputs.promotion_type }}" != "to-staging" && "${{ inputs.promotion_type }}" != "to-prod" ]]; then
+            echo "Error: Invalid promotion type. Must be either 'to-staging' or 'to-prod'"
+            exit 1
+          fi
+
+      - name: Promote to Staging
+        if: inputs.promotion_type == 'to-staging'
+        run: |
+          SOURCE_REPO="${{ inputs.group_name }}-oci-local-dev"
+          TARGET_REPO="${{ inputs.group_name }}-oci-local-staging"
+          
+          if [[ -n "${{ inputs.source_tag }}" ]]; then
+            # Promote specific tag
+            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            
+            echo "Promoting ${source_image} to ${target_image}"
+            jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
+          else
+            echo "Error: source_tag is required for promotion"
+            exit 1
+          fi
+
+      - name: Promote to Production
+        if: inputs.promotion_type == 'to-prod'
+        run: |
+          SOURCE_REPO="${{ inputs.group_name }}-oci-local-staging"
+          TARGET_REPO="${{ inputs.group_name }}-oci-local-prod"
+          
+          if [[ -n "${{ inputs.source_tag }}" ]]; then
+            # Promote specific tag
+            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ inputs.docker_image_name }}:${{ inputs.source_tag }}"
+            
+            echo "Promoting ${source_image} to ${target_image}"
+            jf rt docker-copy "${source_image}" "${TARGET_REPO}/${{ inputs.docker_image_name }}" --flat
+          else
+            echo "Error: source_tag is required for promotion"
+            exit 1
+          fi
+
+      - name: Record Promotion
+        if: inputs.promotion_type != ''
+        run: |
+          echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "- From: ${{ inputs.promotion_type == 'to-staging' && 'dev' || 'staging' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- To: ${inputs.promotion_type == 'to-staging' && 'staging' || 'production'}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ inputs.docker_image_name }}:${{ inputs.source_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: Summary
+        run: |
+          echo "## Docker build completed :green_circle:" >> $GITHUB_STEP_SUMMARY
+          echo "### Tags" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
+            echo "- $TAG" >> $GITHUB_STEP_SUMMARY
+          done
