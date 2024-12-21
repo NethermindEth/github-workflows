@@ -5,10 +5,6 @@ on:
         description: 'Name of the Group (e.g. angkor)'
         required: true
         type: string
-      environment:
-        description: 'Target environment (dev/staging/prod)'
-        required: true
-        type: string
       jfrog_url:
         description: 'URL of Artifactory server'
         type: string
@@ -67,10 +63,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: ${{ steps.registry.outputs.url }}/${{ inputs.group_name }}-oci-local-${{ inputs.environment }}/${{ steps.registry.outputs.repo_name }}
+          images: ${{ steps.registry.outputs.url }}/${{ inputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
           tags: |
-            type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-            type=raw,value=latest
+            type=ref,event=branch
+            type=ref,event=pr
+            type=ref,event=tag
+            type=sha
 
       - name: Build and Push
         id: build_push
