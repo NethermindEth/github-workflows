@@ -85,8 +85,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Validate Promotion
+        if: inputs.promotion_type != ''
+        run: |
+          if [[ -z "${{ inputs.source_tag }}" ]]; then
+            echo "Error: source_tag is required for promotion"
+            exit 1
+          fi
+
       - name: Promote to Staging
-        if: inputs.promotion_type == 'to-staging'
+        if: inputs.promotion_type == 'to-staging' && inputs.source_tag != ''
         run: |
           SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-dev"
           TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
@@ -103,7 +111,7 @@ jobs:
           done
 
       - name: Promote to Production
-        if: inputs.promotion_type == 'to-prod'
+        if: inputs.promotion_type == 'to-prod' && inputs.source_tag != ''
         run: |
           SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
           TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-prod"
