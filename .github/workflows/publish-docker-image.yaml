@@ -36,6 +36,7 @@ jobs:
         modular
         nubia
         research
+        core
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -45,12 +46,20 @@ jobs:
         run: |
           # Convert newline-separated topics to grep pattern
           pattern="^($(echo "$ALLOWED_TOPICS" | tr '\n' '|' | sed 's/|$//'))\$"
+          echo "Allowed topics pattern: $pattern"
+          
+          echo "Fetching repository topics..."
+          all_topics=$(gh api repos/${{ github.repository }}/topics --jq '.names[]')
+          echo "Repository topics: $all_topics"
+          
           group_name=$(gh api repos/${{ github.repository }}/topics --jq '.names[]' | grep -E "$pattern" || echo "")
+          
           if [ -z "$group_name" ]; then
             echo "Error: Repository must have one of these topics:"
             echo "$ALLOWED_TOPICS"
             exit 1
           fi
+          echo "Found matching topic: $group_name"
           echo "result=$group_name" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -65,7 +74,7 @@ jobs:
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
           registry: ${{ inputs.jfrog_url }}
-          username: ${{ steps.topics.outputs.group_name }}
+          username: ${{ steps.topics.outputs.result }}
           password: ${{ secrets.artifactory_access_token }}
 
       - name: Set Registry URL and Repo Name
@@ -80,7 +89,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
+          images: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.result }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -115,8 +124,8 @@ jobs:
       - name: Promote to Staging
         if: inputs.promotion_type == 'to-staging'
         run: |
-          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-dev"
-          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
+          SOURCE_REPO="${{ steps.topics.outputs.result }}-oci-local-dev"
+          TARGET_REPO="${{ steps.topics.outputs.result }}-oci-local-staging"
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
@@ -129,8 +138,8 @@ jobs:
       - name: Promote to Production
         if: inputs.promotion_type == 'to-prod'
         run: |
-          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-staging"
-          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-prod"
+          SOURCE_REPO="${{ steps.topics.outputs.result }}-oci-local-staging"
+          TARGET_REPO="${{ steps.topics.outputs.result }}-oci-local-prod"
           
           # Construct image references
           REGISTRY="${{ steps.registry.outputs.url }}"
