@@ -85,6 +85,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Attest
+        if: inputs.promotion_type == ''
+        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0 
+        id: attest
+        with:
+          subject-name: ${{ steps.registry.outputs.url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ steps.registry.outputs.repo_name }}
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+          push-to-registry: true
+
       - name: Validate Promotion
         if: inputs.promotion_type != ''
         run: |
@@ -144,3 +153,7 @@ jobs:
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
             echo "- $TAG" >> $GITHUB_STEP_SUMMARY
           done
+
+
+
+          
