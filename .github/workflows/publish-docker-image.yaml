@@ -26,6 +26,10 @@ on:
         description: 'A token used to communicate with Artifactory'
         required: true
 
+permissions:
+  id-token: write
+  attestations: write
+  
 jobs:
   publish:
     name: Build and publish Docker image
