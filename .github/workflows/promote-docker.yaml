@@ -63,7 +63,17 @@ jobs:
             target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
             echo "Promoting ${source_image} to ${target_image}"
             docker buildx imagetools create -t "${target_image}" "${source_image}"
+            DIGEST=$(docker buildx imagetools inspect "${target_image}" --format '{{.Digest}}')
+            echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
           done
+
+      - name: Attest
+        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+        id: attest
+        with:
+          subject-name: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-${{ inputs.target_env }}/${{ github.event.repository.name }}
+          subject-digest: ${{ steps.promote.outputs.digest }}
+          push-to-registry: true
 
       - name: Record Promotion
         run: |
