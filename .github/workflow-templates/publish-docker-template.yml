@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    uses: NethermindEth/github-workflows/.github/workflows/publish-docker-image.yaml@feat/docker-image-workflow
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@feat/docker-image-workflow
     with:
       # Required inputs:
       jfrog_url: 'nethermind.jfrog.io'  # default URL of Artifactory server
