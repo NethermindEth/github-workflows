@@ -1,0 +1,57 @@
+name: Docker Image CI/CD
+
+on:
+  # Triggered on push to main/tags for building
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/**'
+
+  # Manual trigger for promotions
+  workflow_dispatch:
+    inputs:
+      promotion_type:
+        description: 'Type of promotion'
+        type: choice
+        options:
+          - 'to-staging'
+          - 'to-prod'
+        required: true
+      source_tag:
+        description: 'Tag to promote (must exist in source repository)'
+        type: string
+        required: true
+
+jobs:
+  # Build job - triggered by push events
+  build:
+    if: github.event_name == 'push'
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker-image.yaml@main
+    with:
+      # Required inputs with defaults
+      jfrog_url: 'https://nethermind.jfrog.io'  # URL of Artifactory server
+      platforms: 'linux/amd64,linux/arm64'       # Platforms to build for
+      dockerfile_path: 'Dockerfile'              # Path to the Dockerfile
+      # Optional promotion inputs (not used in build)
+      promotion_type: ''                         # Type of promotion (to-staging/to-prod)
+      source_tag: ''                            # Specific tag to promote
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
+
+  # Promotion job - manually triggered
+  promote:
+    if: github.event_name == 'workflow_dispatch'
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker-image.yaml@main
+    with:
+      # Required inputs with defaults
+      jfrog_url: 'https://nethermind.jfrog.io'  # URL of Artifactory server
+      platforms: 'linux/amd64,linux/arm64'       # Platforms to build for
+      dockerfile_path: 'Dockerfile'              # Path to the Dockerfile
+      # Promotion inputs
+      promotion_type: ${{ github.event.inputs.promotion_type }}
+      source_tag: ${{ github.event.inputs.source_tag }}
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
