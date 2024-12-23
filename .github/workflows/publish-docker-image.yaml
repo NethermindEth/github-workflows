@@ -29,7 +29,8 @@ on:
 permissions:
   id-token: write
   attestations: write
-  
+  contents: read
+
 jobs:
   publish:
     name: Build and publish Docker image
