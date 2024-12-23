@@ -23,8 +23,8 @@ jobs:
   promote:
     uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@feat/docker-image-workflow
     with:
-      # Required inputs:
       jfrog_url: 'nethermind.jfrog.io'  # URL of Artifactory server
+      # Required inputs:
       target_env: ${{ inputs.target_env }}  # Target environment (staging/prod)
       tags: ${{ inputs.tags }}  # Tags to promote
 

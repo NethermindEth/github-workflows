@@ -18,10 +18,7 @@ jobs:
   build:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@feat/docker-image-workflow
     with:
-      # Required inputs:
       jfrog_url: 'nethermind.jfrog.io'  # default URL of Artifactory server
-
-      # Optional inputs with defaults:
       platforms: 'linux/amd64,linux/arm64'  # Platforms to build for
       dockerfile_path: 'Dockerfile'  # Path to Dockerfile
       additional_tags: ${{ github.ref_type == 'tag' && github.ref_name || '' }}  # Additional tags to apply
