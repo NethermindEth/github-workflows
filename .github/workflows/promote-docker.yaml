@@ -62,7 +62,10 @@ jobs:
             target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
             echo "Promoting ${source_image} to ${target_image}"
             docker buildx imagetools create -t "${target_image}" "${source_image}"
-            DIGEST=$(docker buildx imagetools inspect "${target_image}" --format '{{.Digest}}')
+            
+            # Get digest using docker inspect with json format
+            DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
+            DIGEST="sha256:${DIGEST}"
             echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
           done
 
