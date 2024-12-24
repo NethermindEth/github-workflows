@@ -80,9 +80,11 @@ jobs:
       - name: Record Promotion
         run: |
           SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
+          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${SOURCE_ENV}"
+          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${{ inputs.target_env }}"
+          
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "- From: ${SOURCE_ENV}" >> $GITHUB_STEP_SUMMARY
-          echo "- To: ${{ inputs.target_env }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: ${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- From: ${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- To: ${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
