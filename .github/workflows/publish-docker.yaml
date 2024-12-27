@@ -46,7 +46,7 @@ jobs:
 
       - name: Get Group Topic
         id: topics
-        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@main
+        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@feat/docker-image-workflow
 
       - name: Login to Registry
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
