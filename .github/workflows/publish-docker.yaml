@@ -91,6 +91,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: ./.trivyignore
+          output: trivy-report.txt
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
 
@@ -118,10 +119,28 @@ jobs:
           push-to-registry: true
 
       - name: Summary
-        if: ${{ success() }}
+        if: always()
         run: |
-          echo "## Docker build completed :green_circle:" >> $GITHUB_STEP_SUMMARY
-          echo "### Tags" >> $GITHUB_STEP_SUMMARY
+          echo "## Docker build summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Build status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "- Build and push: :green_circle:" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Build and push: :red_circle:" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ -f trivy-report.txt ]]; then
+            echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
             echo "- $TAG" >> $GITHUB_STEP_SUMMARY
           done
