@@ -67,8 +67,36 @@ jobs:
             type=sha
             ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
 
-      - name: Build and Push
+      - name: Build (no push)
+        id: build_no_push
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        with:
+          context: .
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ inputs.platforms }}
+          push: false
+          tags: ${{ fromJson(steps.meta.outputs.json).tags[0] }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0
+        with:
+          image-ref: ${{ fromJson(steps.meta.outputs.json).tags[0] }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          ignorefile: ./.trivyignore
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+
+      - name: Push to Registry
         id: build_push
+        if: ${{ success() }}
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
         with:
           context: .
@@ -81,6 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Attest
+        if: ${{ success() }}
         uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
         id: attest
         with:
@@ -89,9 +118,10 @@ jobs:
           push-to-registry: true
 
       - name: Summary
+        if: ${{ success() }}
         run: |
           echo "## Docker build completed :green_circle:" >> $GITHUB_STEP_SUMMARY
           echo "### Tags" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
             echo "- $TAG" >> $GITHUB_STEP_SUMMARY
-          done 
+          done
