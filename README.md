@@ -8,8 +8,8 @@ This repository contains reusable GitHub Actions workflows and templates for Net
 
 The workflow for building and publishing Docker images to Artifactory.
 
-**Template:** [`.github/workflow-templates/publish-docker-template.yml`](.github/workflow-templates/publish-docker-template.yml)  
-**Implementation:** [`.github/workflows/publish-docker.yaml`](.github/workflows/publish-docker.yaml)
+**Implementation:** [`.github/workflows/publish-docker.yaml`](.github/workflows/publish-docker.yaml)  
+**Example:** [`examples/publish-docker.yml`](examples/publish-docker.yml)
 
 Features:
 - Multi-platform builds (linux/amd64, linux/arm64)
@@ -22,8 +22,8 @@ Features:
 
 The workflow for promoting Docker images between environments (dev → staging → prod).
 
-**Template:** [`.github/workflow-templates/promote-docker-template.yml`](.github/workflow-templates/promote-docker-template.yml)  
-**Implementation:** [`.github/workflows/promote-docker.yaml`](.github/workflows/promote-docker.yaml)
+**Implementation:** [`.github/workflows/promote-docker.yaml`](.github/workflows/promote-docker.yaml)  
+**Example:** [`examples/promote-docker.yml`](examples/promote-docker.yml)
 
 Features:
 - Promotes images between environments
