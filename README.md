@@ -1,6 +1,6 @@
 # GitHub Workflows
 
-This repository contains reusable GitHub Actions workflows and templates for Nethermind projects.
+This repository contains reusable GitHub Actions workflows for Nethermind projects.
 
 ## Docker Image Workflows
 
@@ -14,9 +14,16 @@ The workflow for building and publishing Docker images to Artifactory.
 Features:
 - Multi-platform builds (linux/amd64, linux/arm64)
 - Automatic tagging based on git refs
+- Security scanning with Trivy
 - Build provenance attestation
 - Caching support
 - Publishes to dev environment
+
+Build Process:
+1. Build image without pushing
+2. Run Trivy vulnerability scan (CRITICAL,HIGH)
+3. Push to registry if scan passes
+4. Create and upload attestation
 
 ### Promote
 
@@ -61,5 +68,5 @@ All workflows include:
 
 Copyright (c) 2024 Nethermind - All rights reserved
 
-This is an internal repository containing proprietary workflows and templates.
+This is an internal repository containing proprietary workflows and examples.
 See [LICENSE](LICENSE) file for details.
