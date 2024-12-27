@@ -5,14 +5,17 @@ on:
         description: 'URL of Artifactory server'
         type: string
         default: 'nethermind.jfrog.io'
+        required: true
       platforms:
         description: 'Platforms to build for (comma-separated)'
         type: string
         default: 'linux/amd64,linux/arm64'
+        required: true
       dockerfile_path:
         description: 'Path to Dockerfile'
         type: string
         default: 'Dockerfile'
+        required: true
       additional_tags:
         description: 'Additional tags to apply (comma-separated)'
         type: string

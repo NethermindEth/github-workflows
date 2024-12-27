@@ -11,22 +11,17 @@ on:
       tags:
         description: 'Tags to promote (comma-separated)'
         type: string
-        required: false
-        default: 'latest'
-
-permissions:
-  id-token: write
-  attestations: write
-  contents: read
+        required: true
 
 jobs:
   promote:
-    uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@feat/docker-image-workflow
+    uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@main
     with:
-      jfrog_url: 'nethermind.jfrog.io'  # URL of Artifactory server
+      # Required inputs (with defaults):
+      jfrog_url: 'nethermind.jfrog.io'        # Required: URL of Artifactory server (default: nethermind.jfrog.io)
       # Required inputs:
-      target_env: ${{ inputs.target_env }}  # Target environment (staging/prod)
-      tags: ${{ inputs.tags }}  # Tags to promote
-
+      target_env: ${{ inputs.target_env }}     # Required: Target environment (staging/prod)
+      tags: ${{ inputs.tags }}                 # Required: Tags to promote
+    
     secrets:
       artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}  # Required: Token for Artifactory

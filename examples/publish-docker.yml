@@ -16,12 +16,14 @@ permissions:
 
 jobs:
   build:
-    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@feat/docker-image-workflow
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
-      jfrog_url: 'nethermind.jfrog.io'  # default URL of Artifactory server
-      platforms: 'linux/amd64,linux/arm64'  # Platforms to build for
-      dockerfile_path: 'Dockerfile'  # Path to Dockerfile
-      additional_tags: ${{ github.ref_type == 'tag' && github.ref_name || '' }}  # Additional tags to apply
-
+      # Required inputs (with defaults):
+      jfrog_url: 'nethermind.jfrog.io'         # Required: URL of Artifactory server (default: nethermind.jfrog.io)
+      platforms: 'linux/amd64,linux/arm64'     # Required: Platforms to build for (default: linux/amd64,linux/arm64)
+      dockerfile_path: 'Dockerfile'            # Required: Path to Dockerfile (default: Dockerfile)
+      # Optional inputs:
+      additional_tags: ''                      # Optional: Additional tags to apply
+    
     secrets:
       artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}  # Required: Token for Artifactory

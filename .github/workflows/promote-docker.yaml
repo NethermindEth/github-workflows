@@ -5,6 +5,7 @@ on:
         description: 'URL of Artifactory server'
         type: string
         default: 'nethermind.jfrog.io'
+        required: true
       target_env:
         description: 'Target environment to promote to (staging/prod)'
         type: string
