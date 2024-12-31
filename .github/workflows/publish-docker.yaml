@@ -73,7 +73,7 @@ jobs:
         with:
           context: .
           file: ${{ inputs.dockerfile_path }}
-          platforms: ${{ inputs.platforms }}
+          platforms: linux/amd64
           push: false
           tags: ${{ fromJson(steps.meta.outputs.json).tags[0] }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -96,22 +96,6 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
-
-      - name: Publish Trivy Output to Summary
-        if: always()
-        run: |
-          if [[ -s trivy-results.txt ]]; then
-            {
-              echo "### Security Scan Results"
-              echo "<details><summary>Vulnerabilities found: $(grep -c "CRITICAL\|HIGH" trivy-results.txt || echo 0)</summary>"
-              echo ""
-              echo "\`\`\`"
-              # Remove empty lines and format the output
-              grep -v '^$' trivy-results.txt | grep -v "Total:" | grep -v "^bin/" || echo "No vulnerabilities found"
-              echo "\`\`\`"
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Push to Registry
         id: build_push
