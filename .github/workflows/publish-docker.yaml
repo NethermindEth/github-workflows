@@ -130,9 +130,9 @@ jobs:
           else
             echo "- Build and push: :red_circle:" >> $GITHUB_STEP_SUMMARY
           fi
-
+          
+          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
           if [[ -f trivy-report.txt ]]; then
-            echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
             echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
