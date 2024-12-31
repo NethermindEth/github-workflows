@@ -79,20 +79,39 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          load: true
 
       - name: Run Trivy vulnerability scanner
         id: trivy
         uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0
         with:
-          image-ref: ${{ fromJson(steps.meta.outputs.json).tags[0] }}
+          image-ref: ${{ steps.build_no_push.outputs.imageid }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: ./.trivyignore
+          output: 'trivy-results.txt'
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_DISABLE_VEX_NOTICE: true
+
+      - name: Publish Trivy Output to Summary
+        if: always()
+        run: |
+          if [[ -s trivy-results.txt ]]; then
+            {
+              echo "### Security Scan Results"
+              echo "<details><summary>Vulnerabilities found: $(grep -c "CRITICAL\|HIGH" trivy-results.txt || echo 0)</summary>"
+              echo ""
+              echo "\`\`\`"
+              # Remove empty lines and format the output
+              grep -v '^$' trivy-results.txt | grep -v "Total:" | grep -v "^bin/" || echo "No vulnerabilities found"
+              echo "\`\`\`"
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Push to Registry
         id: build_push
