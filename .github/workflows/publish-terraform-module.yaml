@@ -1,3 +1,5 @@
+name: Publish Terraform Module
+
 on:
   workflow_call:
     inputs:
@@ -26,8 +28,12 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: jfrog/setup-jfrog-cli@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JFrog CLI
+        uses: jfrog/setup-jfrog-cli@f0a84f35b0e0bd21838c5fb3e6788072d6540d13 # v4.5.5
+
       - name: Configure JFrog CLI
         shell: bash
         env:
@@ -38,10 +44,28 @@ jobs:
             --url="${JFROG_URL}" \
             --interactive=false \
             --access-token-stdin
+
       - name: Configure Terraform registry
         shell: bash
         run: jf tfc --repo-deploy=local-angkor-terraform-module
+
+      - name: Run Trivy vulnerability scanner in IaC mode
+        id: trivy
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.txt'
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_DISABLE_VEX_NOTICE: true
+
       - name: Publish Terraform module
+        if: ${{ success() }}
         shell: bash
         run: |
           mkdir -p package
@@ -51,3 +75,24 @@ jobs:
             --namespace=nethermind \
             --provider=${{ inputs.provider_name }} \
             --tag ${{ inputs.module_version }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Terraform Publish Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Publish Status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "- Publish: :green_circle:" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Publish: :red_circle:" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
+          if [[ -f trivy-results.txt ]]; then
+            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
