@@ -108,7 +108,6 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
-          TRIVY_PLATFORM: linux/amd64
 
       - name: Push to Registry
         id: build_push
