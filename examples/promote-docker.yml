@@ -28,12 +28,13 @@ jobs:
     uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@main
     with:
       # Required inputs
-      target_env: ${{ inputs.target_env }}
-      tags: ${{ inputs.tags }}
+      target_env: ${{ inputs.target_env }}     # Target: 'staging' or 'prod'
+      tags: ${{ inputs.tags }}                 # Example: 'v1.0.0,latest'
 
-      # Optional inputs (with their defaults)
-      jfrog_url: 'nethermind.jfrog.io'         # Default: nethermind.jfrog.io
+      # Optional inputs (with defaults shown)
+      jfrog_url: 'nethermind.jfrog.io'
 
     # Required secrets
     secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
+      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}      # Repository prefix, e.g. 'angkor'

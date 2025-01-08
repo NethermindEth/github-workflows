@@ -35,6 +35,9 @@ on:
       artifactory_access_token:
         description: 'A token used to communicate with Artifactory'
         required: true
+      artifactory_username:
+        description: 'Username for Artifactory authentication'
+        required: true
 
 permissions:
   id-token: write
@@ -56,22 +59,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
 
-      - name: Get Group Topic
-        id: topics
-        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@feat/docker-image-workflow
-
       - name: Login to Registry
         uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
           registry: https://${{ inputs.jfrog_url }}
-          username: ${{ steps.topics.outputs.group_name }}
+          username: ${{ secrets.artifactory_username }}
           password: ${{ secrets.artifactory_access_token }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ github.event.repository.name }}
+          images: ${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-dev/${{ github.event.repository.name }}
           tags: |
             type=raw,value=latest
             type=ref,event=branch
@@ -127,33 +126,35 @@ jobs:
         uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
         id: attest
         with:
-          subject-name: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ github.event.repository.name }}
+          subject-name: ${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-dev/${{ github.event.repository.name }}
           subject-digest: ${{ steps.build_push.outputs.digest }}
           push-to-registry: true
   
       - name: Summary
         if: always()
         run: |
-          echo "## Docker build summary" >> $GITHUB_STEP_SUMMARY
           echo "### Build status" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" == "success" ]; then
-            echo "- Build and push: :green_circle:" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Build and push successful" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Build and push: :red_circle:" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
-          if [[ -f trivy-results.txt ]]; then
-            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
             echo "- $TAG" >> $GITHUB_STEP_SUMMARY
           done
+
+          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
+          if [[ -f trivy-results.txt ]]; then
+            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r line; do
+              if [[ $line == "┌"* ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+              echo "$line" >> $GITHUB_STEP_SUMMARY
+              if [[ $line == *"┘" ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+            done < trivy-results.txt
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+          fi
