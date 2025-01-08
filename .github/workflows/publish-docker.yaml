@@ -141,9 +141,11 @@ jobs:
           fi
 
           echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
-            echo "- $TAG" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
           echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
           if [[ -f trivy-results.txt ]]; then
