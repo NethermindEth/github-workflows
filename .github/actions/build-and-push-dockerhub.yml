@@ -37,7 +37,7 @@ runs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Build and push
-      uses: NethermindEth/github-workflows/.github/actions/build-and-push@main
+      uses: NethermindEth/github-workflows/.github/actions/build-and-push@mario/fix-terraform-checks
       with:
         build-args: ${{ inputs.build-args }}
         context: ${{ inputs.context }}
