@@ -1,0 +1,39 @@
+# Promotes Docker images between environments in JFrog Artifactory
+# Features:
+# - Promotes from dev to staging, or staging to prod
+# - Maintains build provenance attestation
+# - Supports multiple tag promotion
+name: Docker Image Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target environment to promote to'
+        type: choice
+        options: ['staging', 'prod']
+        required: true
+      tags:
+        description: 'Tags to promote (comma-separated)'
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  promote:
+    uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@main
+    with:
+      # Required inputs
+      target_env: ${{ inputs.target_env }}
+      tags: ${{ inputs.tags }}
+
+      # Optional inputs (with their defaults)
+      jfrog_url: 'nethermind.jfrog.io'         # Default: nethermind.jfrog.io
+
+    # Required secrets
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}

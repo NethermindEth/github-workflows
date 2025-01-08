@@ -1,0 +1,159 @@
+on:
+  workflow_call:
+    inputs:
+      jfrog_url:
+        description: 'URL of Artifactory server'
+        type: string
+        default: 'nethermind.jfrog.io'
+        required: false
+      context:  
+        description: "Build's context is the set of files located in the specified PATH or URL"
+        type: string
+        default: '.'
+        required: false
+      platforms:
+        description: 'Platforms to build for (comma-separated)'
+        type: string
+        default: 'linux/amd64,linux/arm64'
+        required: false
+      setup-qemu:
+        description: "Set up QEMU"
+        type: boolean
+        default: false
+        required: false
+      dockerfile_path:
+        description: 'Path to Dockerfile'
+        type: string
+        default: 'Dockerfile'
+        required: false
+      additional_tags:
+        description: 'Additional tags to apply (comma-separated)'
+        type: string
+        default: ''
+        required: false
+    secrets:
+      artifactory_access_token:
+        description: 'A token used to communicate with Artifactory'
+        required: true
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up QEMU
+        if: ${{ inputs.setup-qemu }}
+        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
+
+      - name: Get Group Topic
+        id: topics
+        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@feat/docker-image-workflow
+
+      - name: Login to Registry
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        with:
+          registry: https://${{ inputs.jfrog_url }}
+          username: ${{ steps.topics.outputs.group_name }}
+          password: ${{ secrets.artifactory_access_token }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        with:
+          images: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=latest
+            type=ref,event=branch
+            type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || '' }},enable=${{ github.ref_type == 'tag' }}
+            type=sha
+            ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
+
+      - name: Build (no push)
+        id: build_no_push
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile_path }}
+          platforms: linux/amd64
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # v0.28.0
+        with:
+          image-ref: ${{ steps.build_no_push.outputs.imageid }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          trivyignores: ./.trivyignore
+          output: 'trivy-results.txt'
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_DISABLE_VEX_NOTICE: true
+
+      - name: Push to Registry
+        id: build_push
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ inputs.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Attest
+        if: ${{ success() }}
+        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+        id: attest
+        with:
+          subject-name: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-dev/${{ github.event.repository.name }}
+          subject-digest: ${{ steps.build_push.outputs.digest }}
+          push-to-registry: true
+  
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Docker build summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Build status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "- Build and push: :green_circle:" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Build and push: :red_circle:" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
+          if [[ -f trivy-results.txt ]]; then
+            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
+            echo "- $TAG" >> $GITHUB_STEP_SUMMARY
+          done

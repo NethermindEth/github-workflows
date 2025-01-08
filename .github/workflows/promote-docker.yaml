@@ -1,0 +1,91 @@
+on:
+  workflow_call:
+    inputs:
+      jfrog_url:
+        description: 'URL of Artifactory server'
+        type: string
+        default: 'nethermind.jfrog.io'
+        required: false
+      target_env:
+        description: 'Target environment to promote to (staging/prod)'
+        type: string
+        required: true
+      tags:
+        description: 'Tags to promote (comma-separated)'
+        type: string
+        required: true
+    secrets:
+      artifactory_access_token:
+        description: 'A token used to communicate with Artifactory'
+        required: true
+
+jobs:
+  promote:
+    name: Promote Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        
+      - name: Get Group Topic
+        id: topics
+        uses: NethermindEth/github-workflows/.github/actions/get-group-topic@feat/docker-image-workflow
+
+      - name: Login to Registry
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        with:
+          registry: https://${{ inputs.jfrog_url }}
+          username: ${{ steps.topics.outputs.group_name }}
+          password: ${{ secrets.artifactory_access_token }}
+
+      - name: Promote Images
+        id: promote
+        run: |
+          # Determine source environment based on target
+          if [[ "${{ inputs.target_env }}" == "staging" ]]; then
+            SOURCE_ENV="dev"
+          elif [[ "${{ inputs.target_env }}" == "prod" ]]; then
+            SOURCE_ENV="staging"
+          else
+            echo "Error: Invalid target environment. Must be either 'staging' or 'prod'"
+            exit 1
+          fi
+
+          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${SOURCE_ENV}"
+          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${{ inputs.target_env }}"
+          
+          IMAGE_NAME="${{ github.event.repository.name }}"
+          
+          # Promote all specified tags
+          IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
+          for TAG in "${TAGS[@]}"; do
+            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
+            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
+            echo "Promoting ${source_image} to ${target_image}"
+            docker buildx imagetools create -t "${target_image}" "${source_image}"
+            
+            # Get digest using docker inspect with json format
+            DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
+            DIGEST="sha256:${DIGEST}"
+            echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+          done
+
+      - name: Attest
+        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+        id: attest
+        with:
+          subject-name: ${{ inputs.jfrog_url }}/${{ steps.topics.outputs.group_name }}-oci-local-${{ inputs.target_env }}/${{ github.event.repository.name }}
+          subject-digest: ${{ steps.promote.outputs.digest }}
+          push-to-registry: true
+
+      - name: Record Promotion
+        run: |
+          SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
+          SOURCE_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${SOURCE_ENV}"
+          TARGET_REPO="${{ steps.topics.outputs.group_name }}-oci-local-${{ inputs.target_env }}"
+          
+          echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "- From: ${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- To: ${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

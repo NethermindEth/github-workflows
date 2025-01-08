@@ -1,0 +1,38 @@
+# Builds and publishes Docker images to JFrog Artifactory
+# Features:
+# - Multi-platform build support (amd64/arm64)
+# - Vulnerability scanning with Trivy
+# - Build provenance attestation
+# - Configurable build context and Dockerfile path
+# - Automated builds on main branch and tags
+name: Docker Image Build & Publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/**'
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  build:
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
+    with:
+      # Optional inputs (with their defaults)
+      jfrog_url: 'nethermind.jfrog.io'         # Default: nethermind.jfrog.io
+      platforms: 'linux/amd64,linux/arm64'     # Default: linux/amd64,linux/arm64
+      context: '.'                             # Default: .
+      setup-qemu: false                        # Default: false
+      dockerfile_path: 'Dockerfile'            # Default: Dockerfile
+      additional_tags: ''                      # Default: ''
+
+    # Required secrets
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
