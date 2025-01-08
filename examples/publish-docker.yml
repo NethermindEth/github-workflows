@@ -1,3 +1,10 @@
+# Builds and publishes Docker images to JFrog Artifactory
+# Features:
+# - Multi-platform build support (amd64/arm64)
+# - Vulnerability scanning with Trivy
+# - Build provenance attestation
+# - Configurable build context and Dockerfile path
+# - Automated builds on main branch and tags
 name: Docker Image Build & Publish
 
 on:
@@ -14,20 +21,18 @@ permissions:
   attestations: write
   contents: read
 
-# Note: Build process includes:
-# 1. Build image without pushing
-# 2. Run Trivy vulnerability scan
-# 3. Push to registry if scan passes
-# 4. Create and upload attestation
 jobs:
   build:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
-      # Required inputs (with defaults):
-      jfrog_url: 'nethermind.jfrog.io'         # Required: URL of Artifactory server (default: nethermind.jfrog.io)
-      platforms: 'linux/amd64,linux/arm64'     # Required: Platforms to build for (default: linux/amd64,linux/arm64)
-      dockerfile_path: 'Dockerfile'            # Required: Path to Dockerfile (default: Dockerfile)
-      # Optional inputs:
-      additional_tags: ''                      # Optional: Additional tags to apply
+      # Optional inputs (with their defaults)
+      jfrog_url: 'nethermind.jfrog.io'         # Default: nethermind.jfrog.io
+      platforms: 'linux/amd64,linux/arm64'     # Default: linux/amd64,linux/arm64
+      context: '.'                             # Default: .
+      setup-qemu: false                        # Default: false
+      dockerfile_path: 'Dockerfile'            # Default: Dockerfile
+      additional_tags: ''                      # Default: ''
+
+    # Required secrets
     secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}  # Required: Token for Artifactory
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
