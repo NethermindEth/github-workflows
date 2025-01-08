@@ -25,14 +25,15 @@ jobs:
   build:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
-      # Optional inputs (with their defaults)
-      jfrog_url: 'nethermind.jfrog.io'         # Default: nethermind.jfrog.io
-      platforms: 'linux/amd64,linux/arm64'     # Default: linux/amd64,linux/arm64
-      context: '.'                             # Default: .
-      setup-qemu: false                        # Default: false
-      dockerfile_path: 'Dockerfile'            # Default: Dockerfile
-      additional_tags: ''                      # Default: ''
+      # Optional inputs (with their defaults shown)
+      jfrog_url: 'nethermind.jfrog.io'
+      platforms: 'linux/amd64,linux/arm64'
+      context: '.'
+      setup-qemu: false
+      dockerfile_path: 'Dockerfile'
+      additional_tags: ''                      # Example: 'latest,1.0.0'
 
     # Required secrets
     secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
+      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}      # Repository prefix, e.g. 'angkor'
