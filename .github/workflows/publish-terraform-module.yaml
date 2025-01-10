@@ -79,20 +79,23 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Terraform Publish Summary" >> $GITHUB_STEP_SUMMARY
-          echo "### Publish Status" >> $GITHUB_STEP_SUMMARY
+          echo "### Publish status" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" == "success" ]; then
-            echo "- Publish: :green_circle:" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Publish successful" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Publish: :red_circle:" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Publish failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
           if [[ -f trivy-results.txt ]]; then
             echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r line; do
+              if [[ $line == "┌"* ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+              echo "$line" >> $GITHUB_STEP_SUMMARY
+              if [[ $line == *"┘" ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+            done < trivy-results.txt
             echo "</details>" >> $GITHUB_STEP_SUMMARY
           else
             echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+          fi
