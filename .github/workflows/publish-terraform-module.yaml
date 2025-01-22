@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up JFrog CLI
-        uses: jfrog/setup-jfrog-cli@f0a84f35b0e0bd21838c5fb3e6788072d6540d13 # v4.5.5
+        uses: jfrog/setup-jfrog-cli@f748a0599171a192a2668afee8d0497f7c1069df # v4.5.6
 
       - name: Configure JFrog CLI
         shell: bash
