@@ -73,7 +73,7 @@ jobs:
           done
 
       - name: Attest
-        uses: actions/attest-build-provenance@7668571508540a607bdfd90a87a560489fe372eb # v2.1.0
+        uses: actions/attest-build-provenance@520d128f165991a6c774bcb264f323e3d70747f4 # v2.2.0
         id: attest
         with:
           subject-name: ${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}/${{ github.event.repository.name }}
