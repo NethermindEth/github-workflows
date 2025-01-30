@@ -44,6 +44,39 @@ jobs:
           cd ${{ inputs.chart_path }}
           helm lint .
 
+      - name: Run Helm Tests
+        run: |
+          cd ${{ inputs.chart_path }}
+          helm test .
+
+      - name: Check Backward Compatibility
+        id: backward-compatibility
+        run: |
+          cd ${{ inputs.chart_path }}
+
+          # Fetch the previous version of the chart from JFrog Artifactory
+          PREVIOUS_VERSION=$(helm show chart . | grep 'version:' | awk '{print $2}' | awk -F. '{print $1"."$2"."$3-1}')
+          CHART_NAME=$(grep 'name:' Chart.yaml | awk '{print $2}')
+          jf rt dl "helm-local/my-chart-$PREVIOUS_VERSION.tgz" --flat
+
+          if [[ -f "my-chart-$PREVIOUS_VERSION.tgz" ]]; then
+            echo "Previous version ($PREVIOUS_VERSION) found. Checking for backward compatibility..."
+
+            # Render templates for the new and previous versions
+            helm template . > new-version.yaml
+            helm template $CHART_NAME-$PREVIOUS_VERSION.tgz > previous-version.yaml
+
+            # Compare the rendered templates
+            if ! diff -u previous-version.yaml new-version.yaml; then
+              echo "❌ Backward-incompatible changes detected!"
+              exit 1
+            else
+              echo "✅ No backward-incompatible changes detected."
+            fi
+          else
+            echo "No previous version found. Skipping backward compatibility check."
+          fi
+
       - name: Package Helm Chart
         run: |
           cd ${{ inputs.chart_path }}
@@ -78,9 +111,17 @@ jobs:
             --interactive=false \
             --access-token-stdin
 
-      - name: Publish Helm Chart to JFrog
+      - name: Publish Helm Chart to JFrog if not Already Exists in JFrog
         run: |
-          jf rt u "*.tgz" "helm-local/"
+          CHART_VERSION=$(grep 'version:' Chart.yaml | awk '{print $2}')
+          CHART_NAME=$(grep 'name:' Chart.yaml | awk '{print $2}')
+          if jf rt s "helm-local/${CHART_NAME}-${CHART_VERSION}.tgz" | grep -q "${CHART_NAME}-${CHART_VERSION}.tgz"; then
+            echo "❌ Helm chart ${CHART_NAME} version ${CHART_VERSION} already exists in JFrog. Please update the version before pushing."
+            exit 1
+          else
+            echo "✅ Helm chart version ${CHART_VERSION} is not found in JFrog. Proceeding with upload..."
+            jf rt u "*.tgz" "helm-local/"
+          fi
 
       - name: Summary
         if: always()
