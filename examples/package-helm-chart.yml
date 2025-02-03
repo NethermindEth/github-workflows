@@ -1,0 +1,33 @@
+name: Helm chart package and publish 
+
+on:
+  workflow_dispatch:
+    inputs:
+      jfrog_url:
+        description: 'URL of Artifactory server'
+        type: string
+        default: 'https://nethermind.jfrog.io'
+      CHART_PATH:
+        description: 'Chart path'
+        type: string
+        required: true
+      CHART_FILENAME:
+        description: "Name of chart.yaml file"
+        type: string
+        default: "Chart.yaml"
+
+permissions:
+  id-token: write
+  contents: write  
+  pull-requests: write  
+
+jobs:
+  promote:
+    uses: NethermindEth/github-workflows/.github/workflows/helm-chart-package.yaml@main
+    with:
+      jfrog_url: ${{ inputs.jfrog_url }}    
+      CHART_PATH: ${{ inputs.CHART_PATH }}              
+      CHART_FILENAME: ${{ inputs.CHART_FILENAME }} 
+
+    secrets:
+      ARTIFACTORY_API_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
