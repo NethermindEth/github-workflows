@@ -21,10 +21,12 @@ jobs:
         with:
           fetch-depth: 0
           token: "${{ secrets.access-token }}"
+
       - id: cz
         name: Create bump and changelog
         uses: commitizen-tools/commitizen-action@master
         with:
           github_token: ${{ secrets.access-token }}
+
       - name: Print Version
         run: echo "Bumped to version ${{ steps.cz.outputs.version }}"

@@ -21,24 +21,16 @@ jobs:
         uses: actions/setup-python@v5
 
       - name: Install terraform-docs
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.local/bin" downloads
-          curl -Lso ./downloads/terraform-docs.tar.gz \
-            https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
-          tar -xzf downloads/terraform-docs.tar.gz -C downloads
-          chmod +x downloads/terraform-docs
-          mv downloads/terraform-docs "$HOME/.local/bin/terraform-docs"
-          rm -rf downloads
+        uses: jaxxstorm/action-install-gh-release@v1.14.0
+        with:
+          repo: terraform-docs/terraform-docs
+          tag: v0.17.0
 
       - name: Install tflint
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.local/bin" downloads
-          curl -Lso ./downloads/install_linux.sh \
-            https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh
-          TFLINT_INSTALL_PATH="$HOME/.local/bin" bash ./downloads/install_linux.sh
-          rm -rf downloads
+        uses: jaxxstorm/action-install-gh-release@v1.14.0
+        with:
+          repo: terraform-linters/tflint
+          tag: v0.55.1
 
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
