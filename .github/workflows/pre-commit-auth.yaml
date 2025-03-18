@@ -21,13 +21,13 @@ jobs:
         uses: actions/setup-python@v5
 
       - name: Install terraform-docs
-        uses: jaxxstorm/action-install-gh-release@v1.14.0
+        uses: jaxxstorm/action-install-gh-release@v2.0.0
         with:
           repo: terraform-docs/terraform-docs
           tag: v0.17.0
 
       - name: Install tflint
-        uses: jaxxstorm/action-install-gh-release@v1.14.0
+        uses: jaxxstorm/action-install-gh-release@v2.0.0
         with:
           repo: terraform-linters/tflint
           tag: v0.55.1
