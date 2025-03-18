@@ -69,7 +69,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p package
-          rsync -Rr --exclude=".*" --exclude="package" ./ package/${{ inputs.module_name }}
+          rsync -Rr --exclude=".*" --exclude="example" --exclude="package" ./ package/${{ inputs.module_name }}
           cd package/${{ inputs.module_name }}
           jf terraform publish \
             --namespace=nethermind \
