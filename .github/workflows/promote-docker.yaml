@@ -6,8 +6,13 @@ on:
         type: string
         default: 'nethermind.jfrog.io'
         required: false
+      image_name:
+        description: 'Name of the image to publish.  Defaults to the repository name.'
+        type: string
+        required: false
+        default: "${{ github.event.repository.name }}"
       target_env:
-        description: 'Target environment to promote to (staging/prod)'
+        description: 'Target environment to promote to (either staging or prod)'
         type: string
         required: true
       tags:
@@ -27,11 +32,32 @@ jobs:
     name: Promote Docker image
     runs-on: ubuntu-latest
     steps:
+      - name: Validade input
+        run: |
+          if [[ ! "${{ inputs.target_env }}" =~ ^(staging|prod)$ ]]; then
+            echo "Invalid environment. Choose 'staging' or 'prod'"
+            exit 1
+          fi
+
+      - name: Set environment variables
+        run: |
+          SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
+          echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
+
+          SOURCE_IMAGE="${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-${SOURCE_ENV}/${{ inputs.image_name }}"
+          TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
+          echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
+          echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
+
+
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Setup oras cli
+        uses: oras-project/setup-oras@5c0b487ce3fe0ce3ab0d034e63669e426e294e4d # v1.2.2
 
       - name: Login to Registry
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
@@ -43,33 +69,18 @@ jobs:
       - name: Promote Images
         id: promote
         run: |
-          # Determine source environment based on target
-          if [[ "${{ inputs.target_env }}" == "staging" ]]; then
-            SOURCE_ENV="dev"
-          elif [[ "${{ inputs.target_env }}" == "prod" ]]; then
-            SOURCE_ENV="staging"
-          else
-            echo "Error: Invalid target environment. Must be either 'staging' or 'prod'"
-            exit 1
-          fi
-
-          SOURCE_REPO="${{ secrets.artifactory_username }}-oci-local-${SOURCE_ENV}"
-          TARGET_REPO="${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}"
-          
-          IMAGE_NAME="${{ github.event.repository.name }}"
-          
           # Promote all specified tags
           IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
           for TAG in "${TAGS[@]}"; do
-            source_image="${{ inputs.jfrog_url }}/${SOURCE_REPO}/${IMAGE_NAME}:${TAG}"
-            target_image="${{ inputs.jfrog_url }}/${TARGET_REPO}/${IMAGE_NAME}:${TAG}"
+            source_image="${SOURCE_IMAGE}:${TAG}"
+            target_image="${TARGET_IMAGE}:${TAG}"
             echo "Promoting ${source_image} to ${target_image}"
-            docker buildx imagetools create -t "${target_image}" "${source_image}"
-            
-            # Get digest using docker inspect with json format
+
+            oras cp -r ${source_image} ${target_image}
+
+            # Get image digest and add it to the subject.checksums.txt file
             DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
-            DIGEST="sha256:${DIGEST}"
-            echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+            echo "${DIGEST}  ${TAG}" >> subject.checksums.txt
           done
 
       - name: Attest
@@ -77,17 +88,13 @@ jobs:
         id: attest
         with:
           subject-name: ${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}/${{ github.event.repository.name }}
-          subject-digest: ${{ steps.promote.outputs.digest }}
+          subject-checksums: subject.checksums.txt
           push-to-registry: true
 
       - name: Record Promotion
         run: |
-          SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
-          SOURCE_REPO="${{ secrets.artifactory_username }}-oci-local-${SOURCE_ENV}"
-          TARGET_REPO="${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}"
-          
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "- From: ${{ inputs.jfrog_url }}/${SOURCE_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- To: ${{ inputs.jfrog_url }}/${TARGET_REPO}/${{ github.event.repository.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- From: $SOURCE_IMAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- To: $TARGET_IMAGE" >> $GITHUB_STEP_SUMMARY
           echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

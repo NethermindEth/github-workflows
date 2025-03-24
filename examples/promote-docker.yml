@@ -33,6 +33,7 @@ jobs:
 
       # Optional inputs (with defaults shown)
       jfrog_url: 'nethermind.jfrog.io'
+      image_name: '<repository-name>'
 
     # Required secrets
     secrets:

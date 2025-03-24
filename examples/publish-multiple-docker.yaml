@@ -1,0 +1,37 @@
+# Builds and publishes Docker images to JFrog Artifactory
+name: Docker Image Build & Publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/**'
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  build_service_a:
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
+    with:
+      image_name: 'service-a'
+      context: 'service_a/'
+      dockerfile_path: 'service_a/Dockerfile'
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
+      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}
+
+  build_service_b:
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
+    with:
+      image_name: 'service-b'
+      context: 'service_b/'
+      dockerfile_path: 'service_b/Dockerfile'
+    secrets:
+      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
+      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}
