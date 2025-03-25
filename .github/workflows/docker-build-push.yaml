@@ -92,15 +92,15 @@ jobs:
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: |
+            type=gha,mode=max
+            type=local,dest=./cache
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,push=false
+          outputs: type=image,push=false # type=oci,dest=.
           tags: latest
-          push: false
-          load: true
 
       - name: Run Trivy vulnerability scanner
         id: trivy
@@ -120,6 +120,7 @@ jobs:
       - name: Docker Push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
+          cache-from: type=local,src=./cache
           tags: ${{ steps.meta.outputs.tags }}
           push: true
 
