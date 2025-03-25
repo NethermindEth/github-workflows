@@ -1,0 +1,164 @@
+on:
+  workflow_call:
+    inputs:
+      artifactory_url:
+        description: "URL of Artifactory server"
+        type: string
+        default: "nethermind.jfrog.io"
+        required: false
+      artifactory_repo:
+        description: "Artifactory repository, e.g. 'angkor-oci-local'"
+        type: string
+        required: true
+      image_name:
+        description: "Name of the image to publish.  Defaults to the repository name."
+        type: string
+        required: false
+        default: "${{ github.event.repository.name }}"
+      context:
+        description: "Build's context is the set of files located in the specified PATH or URL"
+        type: string
+        default: "."
+        required: false
+      platforms:
+        description: "Platforms to build for (comma-separated)"
+        type: string
+        default: "linux/amd64,linux/arm64"
+        required: false
+      setup-qemu:
+        description: "Set up QEMU"
+        type: boolean
+        default: false
+        required: false
+      dockerfile_path:
+        description: "Path to Dockerfile"
+        type: string
+        default: "Dockerfile"
+        required: false
+      additional_tags:
+        description: "Additional tags to apply (comma-separated)"
+        type: string
+        default: ""
+        required: false
+    secrets:
+      artifactory_access_token:
+        description: "A token used to communicate with Artifactory"
+        required: true
+      artifactory_username:
+        description: "Username for Artifactory authentication"
+        required: true
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up QEMU
+        if: ${{ inputs.setup-qemu }}
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Login to Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: https://${{ inputs.artifactory_url }}
+          username: ${{ secrets.artifactory_username }}
+          password: ${{ secrets.artifactory_access_token }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: ${{ inputs.artifactory_url }}/${{ inputs.artifactory_repo }}/${{ inputs.image_name }}
+          tags: |
+            type=raw,value=latest
+            type=ref,event=branch
+            type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || '' }},enable=${{ github.ref_type == 'tag' }}
+            type=sha
+            ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
+
+      - name: Docker Build
+        id: build_no_push
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ inputs.platforms }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: latest
+          push: false
+          load: true
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
+        with:
+          image-ref: ${{ steps.build_no_push.outputs.imageid }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          trivyignores: ./.trivyignore
+          output: "trivy-results.txt"
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_DISABLE_VEX_NOTICE: true
+
+      - name: Docker Push
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+
+      - name: Attest
+        if: ${{ success() }}
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
+        id: attest
+        with:
+          subject-name: ${{ steps.meta.outputs.tags }}
+          subject-digest: ${{ steps.build_no_push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Build status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Build and push successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r TAG; do
+            echo "- $TAG" >> $GITHUB_STEP_SUMMARY
+          done
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
+          if [[ -f trivy-results.txt ]]; then
+            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r line; do
+              if [[ $line == "┌"* ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+              echo "$line" >> $GITHUB_STEP_SUMMARY
+              if [[ $line == *"┘" ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
+            done < trivy-results.txt
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
+          fi
