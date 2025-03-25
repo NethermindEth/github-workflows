@@ -27,6 +27,7 @@ jobs:
     with:
       # Optional inputs (with their defaults shown)
       jfrog_url: 'nethermind.jfrog.io'
+      image_name: '<repository-name>'
       platforms: 'linux/amd64,linux/arm64'
       context: '.'
       setup-qemu: false
