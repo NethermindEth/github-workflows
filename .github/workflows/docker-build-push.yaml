@@ -99,14 +99,17 @@ jobs:
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,push=false # type=oci,dest=.
+          outputs: |
+            type=oci,dest=./image.tar
+          # type=image,push=false
           tags: latest
 
       - name: Run Trivy vulnerability scanner
         id: trivy
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
-          image-ref: ${{ steps.build_no_push.outputs.imageid }}
+          scan-type: "fs"
+          scan-ref: "./image.tar"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
