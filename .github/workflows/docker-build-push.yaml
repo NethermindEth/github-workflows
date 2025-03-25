@@ -97,6 +97,7 @@ jobs:
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,push=false
           tags: latest
           push: false
           load: true
