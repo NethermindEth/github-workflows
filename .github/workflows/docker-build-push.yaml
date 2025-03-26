@@ -100,7 +100,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: |
-            type=oci,dest=./image.tar
+            type=tar,dest=./image.tar
           # type=image,push=false
           tags: latest
 
