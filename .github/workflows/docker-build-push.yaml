@@ -100,6 +100,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: |
             type=image,push=false
+            type=docker
           tags: latest
 
       - name: Run Trivy vulnerability scanner
