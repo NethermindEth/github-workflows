@@ -91,9 +91,9 @@ jobs:
         id: build_no_push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
-          cache-from: type=gha
-          cache-to: |
-            type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: |
+          #   type=gha,mode=max
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
@@ -121,7 +121,7 @@ jobs:
       - name: Docker Push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
-          cache-from: type=gha
+          # cache-from: type=gha
           tags: ${{ steps.meta.outputs.tags }}
           push: true
 
