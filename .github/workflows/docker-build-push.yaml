@@ -99,7 +99,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: |
-            type=docker
+            type=image,push=false
           tags: latest
 
       - name: Run Trivy vulnerability scanner
