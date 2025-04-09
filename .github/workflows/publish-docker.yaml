@@ -116,7 +116,7 @@ jobs:
       - name: Push to Registry
         run: |
           TMP_TAG=temporary-tag
-          NEW_TAGS=${{ steps.meta.outputs.tags }}
+          NEW_TAGS="${{ steps.meta.outputs.tags }}"
           # Process each tag separately by splitting the comma-separated string
           IFS=',' read -ra TAGS <<< "$NEW_TAGS"
           for TAG in "${TAGS[@]}"; do
