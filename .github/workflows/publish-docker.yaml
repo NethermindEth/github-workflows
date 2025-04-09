@@ -36,6 +36,11 @@ on:
         type: string
         default: ""
         required: false
+      skip_trivy:
+        description: "Should trivy scan be skipped. Use on your own risk"
+        type: boolean
+        default: false
+        required: false
     secrets:
       artifactory_access_token:
         description: "A token used to communicate with Artifactory"
@@ -99,6 +104,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         id: trivy
+        if: ${{ !inputs.skip_trivy }}
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
           image-ref: ${{ steps.build_no_push.outputs.imageid }}
