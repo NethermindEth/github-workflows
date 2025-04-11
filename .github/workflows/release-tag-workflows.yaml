@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-push:
+  release-tag:
     runs-on: ubuntu-latest
     name: Create and push tag
     steps:
