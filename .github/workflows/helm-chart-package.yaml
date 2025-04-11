@@ -4,11 +4,11 @@ on:
   workflow_call:
     inputs:
       jfrog_url:
-        description: 'URL of Artifactory server'
+        description: "URL of Artifactory server"
         type: string
-        default: 'https://nethermind.jfrog.io'
+        default: "https://nethermind.jfrog.io"
       CHART_PATH:
-        description: 'Chart path'
+        description: "Chart path"
         type: string
         required: true
       CHART_FILENAME:
@@ -17,12 +17,12 @@ on:
         default: "Chart.yaml"
     secrets:
       ARTIFACTORY_API_TOKEN:
-        description: 'A token used to communicate with Artifactory'
-        required: true   
-          
+        description: "A token used to communicate with Artifactory"
+        required: true
+
 permissions:
-  contents: write  
-  pull-requests: write  
+  contents: write
+  pull-requests: write
 
 jobs:
   publish:
@@ -74,14 +74,13 @@ jobs:
             --interactive=false \
             --access-token-stdin
 
-      
       - name: Check Backward Compatibility
         id: backward-compatibility
         run: |
           cd ${{ inputs.CHART_PATH }}
 
           # Fetch the previous version of the chart from JFrog Artifactory
-          git fetch origin main --depth=1  
+          git fetch origin main --depth=1
           echo "PREVIOUS_VERSION=$(git show origin/main:./${{ inputs.CHART_FILENAME}}| grep '^version:' | awk '{print $2}')" >> $GITHUB_ENV
           jf rt dl "helm-local/${{ env.CHART_NAME }}-$PREVIOUS_VERSION.tgz" --flat
 
@@ -111,7 +110,7 @@ jobs:
           cd ${{ inputs.CHART_PATH }}
           helm-docs ${{ inputs.CHART_PATH }}
 
-      - name: Check if the chart version already exist 
+      - name: Check if the chart version already exist
         run: |
           echo "Previous Chart Version: ${{ env.PREVIOUS_VERSION }}"
           echo "Current Chart Version: ${{ env.CHART_VERSION }}"
@@ -130,16 +129,16 @@ jobs:
 
       - name: Run Trivy vulnerability scanner in IaC mode
         id: trivy
-        continue-on-error: true  
+        continue-on-error: true
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5
         with:
-          scan-type: 'config'
-          scan-ref: '${{ inputs.CHART_PATH }}${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}.tgz'
-          format: 'sarif'
-          exit-code: '1'
+          scan-type: "config"
+          scan-ref: "${{ inputs.CHART_PATH }}${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}.tgz"
+          format: "sarif"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.sarif' 
+          severity: "CRITICAL,HIGH"
+          output: "trivy-results.sarif"
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
@@ -167,16 +166,16 @@ jobs:
             echo "No diff file found."
           fi
           } > pr_comment.txt
-        
+
       - name: Send notification on PR
-        if:  if env.VERSION_INCREMENTED == 'true' && github.event_name == 'pull_request'
+        if: if env.VERSION_INCREMENTED == 'true' && github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: "Chart Compatibility Check"
           recreate: true
           hide_classify: "OUTDATED"
           path: pr_comment.txt
-          
+
       - name: Publish Helm Chart to JFrog if not Already Exists in JFrog
         run: |
           cd ${{ inputs.CHART_PATH }}
@@ -195,13 +194,12 @@ jobs:
           if [[ "${{ job.status }}" == "success" ]]; then
             echo "✅ Helm chart published successfully"
           else
-            echo "❌ Helm chart publishing failed" 
+            echo "❌ Helm chart publishing failed"
           fi
 
-          echo "### Trivy Scan Output" 
+          echo "### Trivy Scan Output"
           if [[ -s 'trivy-results.sarif' ]]; then
-            cat trivy-results.sarif 
+            cat trivy-results.sarif
           else
             echo "trivy-results.sarif file not found"
           fi
-

@@ -1,55 +1,15 @@
+name: Create release
 on:
-  workflow_call:
-    inputs:
-      releaseType:
-        required: true
-        type: string
+  push:
+    branches:
+      - main
 
-    outputs:
-      releases_created:
-        value: ${{ jobs.version.outputs.releases_created }}
-      release_created:
-        value: ${{ jobs.version.outputs.release_created }}
-      prs_created:
-        value: ${{ jobs.version.outputs.prs_created }}
-      upload_url:
-        value: ${{ jobs.version.outputs.upload_url }}
-      html_url:
-        value: ${{ jobs.version.outputs.html_url }}
-      tag_name:
-        value: ${{ jobs.version.outputs.tag_name }}
-      major:
-        value: ${{ jobs.version.outputs.major }}
-      minor:
-        value: ${{ jobs.version.outputs.minor }}
-      patch:
-        value: ${{ jobs.version.outputs.patch }}
-      sha:
-        value: ${{ jobs.version.outputs.sha }}
-      pr:
-        value: ${{ jobs.version.outputs.pr }}
-      prs:
-        value: ${{ jobs.version.outputs.prs }}
+permissions:
+  id-token: write
+  contents: write
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-      release_created: ${{ steps.release.outputs.release_created }}
-      prs_created: ${{ steps.release.outputs.prs_created }}
-      upload_url: ${{ steps.release.outputs.upload_url }}
-      html_url: ${{ steps.release.outputs.html_url }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      major: ${{ steps.release.outputs.major }}
-      minor: ${{ steps.release.outputs.minor }}
-      patch: ${{ steps.release.outputs.patch }}
-      sha: ${{ steps.release.outputs.sha }}
-      pr: ${{ steps.release.outputs.pr }}
-      prs: ${{ steps.release.outputs.prs }}
-    steps:
-      - name: Release Please
-        id: release
-        uses: googleapis/release-please-action@v4
-        with:
-          release-type: ${{ inputs.releaseType }}
+  release:
+    uses: ./.github/workflows/release-please.yaml
+    with:
+      releaseType: simple

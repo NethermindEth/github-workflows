@@ -2,12 +2,12 @@ on:
   workflow_call:
     inputs:
       repository_name:
-        description: 'Name of current repository'
+        description: "Name of current repository"
         required: true
         type: string
     secrets:
       artifactory_access_token:
-        description: 'A token used to communicate with Artifactory'
+        description: "A token used to communicate with Artifactory"
         required: true
 
 permissions:
@@ -16,19 +16,19 @@ permissions:
 
 jobs:
   release:
-    uses: ./.github/workflows/release.yaml
+    uses: ./.github/workflows/release-please.yaml
     with:
       releaseType: terraform-module
 
   compute_name:
-    needs: [ release ]
+    needs: [release]
     if: needs.release.outputs.releases_created == 'true'
     uses: ./.github/workflows/compute-terraform-module-name.yaml
     with:
       repository_name: ${{ inputs.repository_name }}
 
   publish:
-    needs: [ release, compute_name ]
+    needs: [release, compute_name]
     if: needs.release.outputs.releases_created == 'true'
     uses: ./.github/workflows/publish-terraform-module.yaml
     with:
