@@ -41,7 +41,7 @@ on:
         default: ""
         required: false
       skip_trivy:
-        description: "Should trivy scan be skipped. Use on your own risk"
+        description: "Skip trivy scan. Use at your own risk"
         type: boolean
         default: false
         required: false
@@ -54,6 +54,11 @@ on:
         description: "Use cache for build"
         type: boolean
         default: true
+        required: false
+      skip_attest:
+        description: "Skip docker image attestation"
+        type: boolean
+        default: false
         required: false
 
     secrets:
@@ -143,7 +148,7 @@ jobs:
           push: true
 
       - name: Attest
-        if: ${{ success() }}
+        if: ${{ success() && !inputs.skip_attest }}
         uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
         id: attest
         with:
