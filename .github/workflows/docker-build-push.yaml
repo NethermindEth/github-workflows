@@ -40,6 +40,22 @@ on:
         type: string
         default: ""
         required: false
+      skip_trivy:
+        description: "Should trivy scan be skipped. Use on your own risk"
+        type: boolean
+        default: false
+        required: false
+      trivyignore:
+        description: "Comma-separated list of relative paths in repository to one or more .trivyignore files"
+        type: string
+        default: ""
+        required: false
+      use_cache:
+        description: "Use cache for build"
+        type: boolean
+        default: true
+        required: false
+
     secrets:
       artifactory_access_token:
         description: "A token used to communicate with Artifactory"
@@ -91,6 +107,8 @@ jobs:
         id: build_no_push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
+          cache-from: ${{ inputs.use_cache && 'type=gha' || '' }}
+          cache-to: ${{ inputs.use_cache && 'type=gha,mode=max' || '' }}
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
@@ -102,6 +120,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         id: trivy
+        if: ${{ !inputs.skip_trivy }}
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
           image-ref: ${{ steps.build_no_push.outputs.imageid }}
@@ -111,6 +130,7 @@ jobs:
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
           output: "trivy-results.txt"
+          trivyignores: ${{ inputs.trivyignore }}
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
