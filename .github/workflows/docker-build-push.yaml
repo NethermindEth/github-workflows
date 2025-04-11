@@ -75,8 +75,8 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Build and publish Docker image
+  docker-build:
+    name: Docker Build, Scan, Attest and Push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
