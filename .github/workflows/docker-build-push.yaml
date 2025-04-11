@@ -104,7 +104,7 @@ jobs:
             ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
 
       - name: Docker Build
-        id: build_no_push
+        id: build
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           cache-from: ${{ inputs.use_cache && 'type=gha' || '' }}
@@ -123,7 +123,7 @@ jobs:
         if: ${{ !inputs.skip_trivy }}
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
-          image-ref: ${{ steps.build_no_push.outputs.imageid }}
+          image-ref: ${{ steps.build.outputs.imageid }}
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
@@ -137,6 +137,7 @@ jobs:
 
       - name: Docker Push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        id: push
         with:
           tags: ${{ steps.meta.outputs.tags }}
           push: true
@@ -147,7 +148,7 @@ jobs:
         id: attest
         with:
           subject-name: ${{ steps.meta.outputs.tags }}
-          subject-digest: ${{ steps.build_no_push.outputs.digest }}
+          subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
       - name: Summary
