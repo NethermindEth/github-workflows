@@ -36,6 +36,11 @@ on:
         type: string
         default: ""
         required: false
+      skip_trivy:
+        description: "Should trivy scan be skipped. Use on your own risk"
+        type: boolean
+        default: false
+        required: false
     secrets:
       artifactory_access_token:
         description: "A token used to communicate with Artifactory"
@@ -99,6 +104,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         id: trivy
+        if: ${{ !inputs.skip_trivy }}
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
           image-ref: ${{ steps.build_no_push.outputs.imageid }}
@@ -116,7 +122,7 @@ jobs:
       - name: Push to Registry
         run: |
           TMP_TAG=temporary-tag
-          NEW_TAGS=${{ steps.meta.outputs.tags }}
+          NEW_TAGS="${{ steps.meta.outputs.tags }}"
           # Process each tag separately by splitting the comma-separated string
           IFS=',' read -ra TAGS <<< "$NEW_TAGS"
           for TAG in "${TAGS[@]}"; do
