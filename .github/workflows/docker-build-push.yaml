@@ -45,7 +45,7 @@ on:
         type: boolean
         default: false
         required: false
-      trivyignore:
+      trivyignores:
         description: "Comma-separated list of relative paths in repository to one or more .trivyignore files"
         type: string
         default: ""
@@ -135,7 +135,7 @@ jobs:
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
           output: "trivy-results.txt"
-          trivyignores: ${{ inputs.trivyignore }}
+          trivyignores: ${{ inputs.trivyignores }}
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
