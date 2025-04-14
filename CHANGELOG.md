@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/NethermindEth/github-workflows/compare/v1.0.0...v1.1.0) (2025-04-14)
+
+
+### Features
+
+* docker build improvements ([459b8fa](https://github.com/NethermindEth/github-workflows/commit/459b8fa87abefe69cb29f02f6d19d9f4092d0044))
+
 ## 1.0.0 (2025-04-14)
 
 
