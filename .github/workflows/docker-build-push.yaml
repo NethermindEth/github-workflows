@@ -21,9 +21,12 @@ on:
         default: "."
         required: false
       platforms:
-        description: "Platforms to build for (comma-separated)"
+        description: >
+          Platforms to build for (comma-separated, example: linux/amd64,linux/arm64). Currently only one platform at a time is supported.
+          Trivy expects a single image in the manifest list.
+          Running this action more than once with multiple platform won't push the manifest list correctly.
         type: string
-        default: "linux/amd64,linux/arm64"
+        default: "linux/amd64"
         required: false
       setup-qemu:
         description: "Set up QEMU"
@@ -40,6 +43,27 @@ on:
         type: string
         default: ""
         required: false
+      skip_trivy:
+        description: "Skip trivy scan. Use at your own risk"
+        type: boolean
+        default: false
+        required: false
+      trivyignores:
+        description: "Comma-separated list of relative paths in repository to one or more .trivyignore files"
+        type: string
+        default: ""
+        required: false
+      use_cache:
+        description: "Use cache for build"
+        type: boolean
+        default: true
+        required: false
+      skip_attest:
+        description: "Skip docker image attestation"
+        type: boolean
+        default: false
+        required: false
+
     secrets:
       artifactory_access_token:
         description: "A token used to communicate with Artifactory"
@@ -54,8 +78,8 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Build and publish Docker image
+  docker-build:
+    name: Docker Build, Scan, Attest and Push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -88,48 +112,51 @@ jobs:
             ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
 
       - name: Docker Build
-        id: build_no_push
+        id: build
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: ${{ inputs.use_cache && 'type=gha' || '' }}
+          cache-to: ${{ inputs.use_cache && 'type=gha,mode=max' || '' }}
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: |
+            type=image,push=false
+            type=docker
           tags: latest
-          push: false
-          load: true
 
       - name: Run Trivy vulnerability scanner
         id: trivy
+        if: ${{ !inputs.skip_trivy }}
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
-          image-ref: ${{ steps.build_no_push.outputs.imageid }}
+          image-ref: ${{ steps.build.outputs.imageid }}
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
-          trivyignores: ./.trivyignore
           output: "trivy-results.txt"
+          trivyignores: ${{ inputs.trivyignores }}
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
 
       - name: Docker Push
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        id: push
         with:
           tags: ${{ steps.meta.outputs.tags }}
           push: true
 
       - name: Attest
-        if: ${{ success() }}
+        if: ${{ success() && !inputs.skip_attest }}
         uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
         id: attest
         with:
           subject-name: ${{ steps.meta.outputs.tags }}
-          subject-digest: ${{ steps.build_no_push.outputs.digest }}
+          subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
       - name: Summary
