@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/NethermindEth/github-workflows/compare/v1.1.0...v1.1.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* add missing issues permission for release please ([912186b](https://github.com/NethermindEth/github-workflows/commit/912186bd22df1fae66c0e06c69fe292d1319c7ea))
+* add missing issues permission for release please ([29a013e](https://github.com/NethermindEth/github-workflows/commit/29a013eaa7b9b1b0fd13af869088f2fc8e3a7e24))
+
 ## [1.1.0](https://github.com/NethermindEth/github-workflows/compare/v1.0.0...v1.1.0) (2025-04-14)
 
 
