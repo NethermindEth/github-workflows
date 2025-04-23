@@ -63,6 +63,11 @@ on:
         type: boolean
         default: false
         required: false
+      repository:
+        description: "Repository name"
+        type: string
+        default: ${{ github.repository }}
+        required: false
 
     secrets:
       artifactory_access_token:
@@ -84,6 +89,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          repository: ${{ inputs.repository }}
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
