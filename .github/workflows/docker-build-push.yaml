@@ -73,6 +73,21 @@ on:
         type: string
         default: "main"
         required: false
+      triggering_repo:
+        description: "Repository name that triggered the workflow"
+        type: string
+        default: ${{ github.event.repository.name }}
+        required: false
+      commit_sha:
+        description: "Commit SHA that triggered the workflow"
+        type: string
+        default: ${{ github.event.after }}
+        required: false
+      branch:
+        description: "Branch name that triggered the workflow"
+        type: string
+        default: ${{ github.event.ref }}
+        required: false
 
     secrets:
       artifactory_access_token:
