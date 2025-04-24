@@ -81,6 +81,9 @@ on:
       artifactory_username:
         description: "Username for Artifactory authentication"
         required: true
+      checkout_token:
+        description: "token used for checkout"
+        required: false
 
 permissions:
   id-token: write
