@@ -97,6 +97,7 @@ jobs:
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
+          token: ${{ secrets.CHECKOUT_TOKEN }}
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
