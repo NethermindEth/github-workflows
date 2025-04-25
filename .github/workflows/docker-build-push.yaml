@@ -108,6 +108,12 @@ jobs:
           ref: ${{ inputs.ref }}
           token: ${{ inputs.repository != github.repository && secrets.GITHUB_TOKEN || secrets.checkout_token }}
 
+        # Subsequent steps can now access code under './worldcoin-backup-service'
+      - name: List checked out code
+        run: |
+          echo "Listing checked out code"
+          ls -laR .
+
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
