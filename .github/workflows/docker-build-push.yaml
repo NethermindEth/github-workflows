@@ -66,7 +66,7 @@ on:
       repository:
         description: "Repository name"
         type: string
-        default: ${{ github.repository }}
+        default: ${{ github.event.repository.name }}
         required: false
       ref:
         description: "The branch, tag or SHA to checkout"
@@ -95,6 +95,12 @@ jobs:
     name: Docker Build, Scan, Attest and Push
     runs-on: ubuntu-latest
     steps:
+      - name: Dump github context
+        run:   echo "$GITHUB_CONTEXT"
+        shell: bash
+        env:
+         GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
