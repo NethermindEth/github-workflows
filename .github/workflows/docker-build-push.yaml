@@ -64,29 +64,14 @@ on:
         default: false
         required: false
       repository:
-        description: "Repository name"
+        description: "Repository to checkout"
         type: string
         default: ${{ github.repository }}
         required: false
       ref:
-        description: "The branch, tag or SHA to checkout"
+        description: "Reference - branch, tag or SHA to checkout"
         type: string
-        default: "main"
-        required: false
-      triggering_repo:
-        description: "Repository name that triggered the workflow"
-        type: string
-        default: ${{ github.event.repository.name }}
-        required: false
-      commit_sha:
-        description: "Commit SHA that triggered the workflow"
-        type: string
-        default: ${{ github.event.after }}
-        required: false
-      branch:
-        description: "Branch name that triggered the workflow"
-        type: string
-        default: ${{ github.event.ref }}
+        default: ${{ github.ref }}
         required: false
 
     secrets:
@@ -110,8 +95,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          repository: ${{ inputs.repository }}
+          repository: ${{ inputs.repository != github.repository && inputs.repository || '' }}
           ref: ${{ inputs.ref }}
+          token: ${{ inputs.repository != github.repository && secrets.GITHUB_TOKEN || '' }}
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
