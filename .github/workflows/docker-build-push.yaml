@@ -105,7 +105,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           repository: ${{ inputs.repository != github.repository && inputs.repository || github.repository }}
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.ref != github.ref && inputs.ref || github.ref }}
           token: ${{ inputs.repository != github.repository && secrets.GITHUB_TOKEN || secrets.checkout_token }}
 
         # Subsequent steps can now access code under './worldcoin-backup-service'
