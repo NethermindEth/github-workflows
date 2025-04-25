@@ -66,7 +66,7 @@ on:
       repository:
         description: "Repository to checkout"
         type: string
-        default: ${{ github.repository }}
+        default: ${{ github.event.repository.name }}
         required: false
       ref:
         description: "Reference - branch, tag or SHA to checkout"
@@ -81,6 +81,9 @@ on:
       artifactory_username:
         description: "Username for Artifactory authentication"
         required: true
+      checkout_token:
+        description: "token used for checkout"
+        required: false
 
 permissions:
   id-token: write
@@ -92,12 +95,18 @@ jobs:
     name: Docker Build, Scan, Attest and Push
     runs-on: ubuntu-latest
     steps:
+      - name: Dump github context
+        run:   echo "$GITHUB_CONTEXT"
+        shell: bash
+        env:
+         GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           repository: ${{ inputs.repository != github.repository && inputs.repository || '' }}
           ref: ${{ inputs.ref }}
-          token: ${{ inputs.repository != github.repository && secrets.GITHUB_TOKEN || '' }}
+          token: ${{ inputs.repository != github.repository && secrets.GITHUB_TOKEN || secrets.checkout_token }}
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
