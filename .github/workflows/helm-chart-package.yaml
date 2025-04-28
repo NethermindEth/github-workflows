@@ -61,7 +61,7 @@ jobs:
           echo "CHART_VERSION=$(grep '^version:' ${{ inputs.CHART_FILENAME}} | awk '{print $2}')" >> $GITHUB_ENV
 
       - name: Set up JFrog CLI
-        uses: jfrog/setup-jfrog-cli@f748a0599171a192a2668afee8d0497f7c1069df # v4.5.6
+        uses: jfrog/setup-jfrog-cli@6359487fb3e3de9d8ce7c1c8bbe8ed298a55d061 # v4.5.9
 
       - name: Configure JFrog CLI
         env:
