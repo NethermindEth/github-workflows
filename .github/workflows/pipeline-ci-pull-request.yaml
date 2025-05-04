@@ -1,0 +1,75 @@
+name: CI pull request
+
+on:
+  workflow_call:
+    inputs:
+      jfrog_project:
+        description: 'Key of the JFrog project'
+        type: string
+        required: true
+      image_reportory:
+        description: 'Repository name'
+        type: string
+        required: true
+      platforms:
+        description: 'Comma-separated list of platforms (e.g., linux/amd64,linux/arm64)'
+        type: string
+        required: true
+
+    secrets:
+      registry_username:
+        description: 'Username for Artifactory'
+        required: true
+      registry_password:
+        description: 'Password for Artifactory'
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#          ref: ${{ github.head_ref }}
+#
+#      - name: Run pre-commit
+#        uses: pre-commit/action@v3.0.1
+
+      - name: Define image tag
+        id: set_tag
+        run: |
+          GITHUB_REPOSITORY=${{ github.repository }}
+          IMAGE_NAME=${GITHUB_REPOSITORY#*/}
+          HEAD_REF=${{ github.head_ref }}
+          HEAD_SLUG=${HEAD_REF//\//-}
+          #SHORT_SHA=$(git rev-parse --short HEAD)
+          IMAGE_TAG=${HEAD_SLUG}-${{ github.sha }}
+          echo "HEAD_SLUG=${HEAD_SLUG}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build and push image
+        uses: ./.github/actions/docker-build-and-push
+        with:
+          registry_username: ${{ secrets.registry_username }}
+          registry_password: ${{ secrets.registry_password }}
+          image_reportory: ${{ inputs.image_reportory }}
+          image_name: ${{ env.IMAGE_NAME }}
+          image_tag: ${{ env.IMAGE_TAG }}
+          platforms: ${{ inputs.platforms }}
+          add_tag_latest: true
+
+      - name: Publish Build Info to JFrog
+        uses: ./.github/actions/jfrog-build-publish
+        with:
+          jfrog_project: ${{ inputs.jfrog_project }}
+          image_reportory: ${{ inputs.image_reportory }}
+          image_name: ${{ env.IMAGE_NAME }}
+          image_tag: ${{ env.IMAGE_TAG }}
+          platforms: ${{ inputs.platforms }}
