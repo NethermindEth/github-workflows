@@ -1,8 +1,26 @@
+# This workflow is used to build and push Docker images to JFrog Artifactory.
+# Structure of the workflow:
+# - It is triggered by a workflow call.
+# - It checks out the code from the repository.
+# - It runs pre-commit hooks to ensure code quality.
+# - If workflow triggered by a push to main, it creates a changelog and version bump using commitizen.
+# - It defines the image tag.
+# - It installs JFrog CLI and logs in to Artifactory using the OIDC token.
+# - It sets up QEMU and Docker Buildx for multi-platform builds.
+# - It builds and pushes the Docker image to Artifactory.
+# - It collects environment variables and Git information for the build.
+# - It adds the built images to the JFrog build context.
+# - It publishes the build information to JFrog Artifactory.
+
 name: CI pull request
 
 on:
   workflow_call:
     inputs:
+      is_pull_request:
+        description: 'Is this a pull request?'
+        type: boolean
+        default: false
       artifactory_project:
         description: 'Key of the Artifactory project'
         type: string
@@ -11,22 +29,20 @@ on:
         description: 'Repository name'
         type: string
         required: true
+      image_name:
+        description: 'Name of the image to publish. Defaults to the repository name.'
+        type: string
+        required: false
+        default: "${{ github.event.repository.name }}"
       platforms:
         description: 'Comma-separated list of platforms (e.g., linux/amd64,linux/arm64)'
         type: string
         required: true
 
-    secrets:
-      registry_username:
-        description: 'Username for Artifactory'
-        required: true
-      registry_password:
-        description: 'Password for Artifactory'
-        required: true
-
 permissions:
   id-token: write
-  contents: read
+  contents: write
+  attestations: write
 
 jobs:
   pipeline:
@@ -41,17 +57,24 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
 
+      - id: cz
+        if: inputs.is_pull_request == false
+        name: Create bump and changelog
+        uses: commitizen-tools/commitizen-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Define image tag
         id: set_tag
         run: |
-          GITHUB_REPOSITORY=${{ github.repository }}
-          IMAGE_NAME=${GITHUB_REPOSITORY#*/}
           HEAD_REF=${{ github.head_ref }}
           HEAD_SLUG=${HEAD_REF//\//-}
-          #SHORT_SHA=$(git rev-parse --short HEAD)
-          IMAGE_TAG=${HEAD_SLUG}-${{ github.sha }}
+          if [[ "${{ steps.cz.conclusion }}" == "success" ]]; then
+            IMAGE_TAG=${{ steps.cz.outputs.version }}
+          else
+            IMAGE_TAG=${HEAD_SLUG}-${{ github.sha }}
+          fi
           echo "HEAD_SLUG=${HEAD_SLUG}" >> $GITHUB_ENV
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
 
       - name: Install JFrog CLI
@@ -69,8 +92,6 @@ jobs:
           registry: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}
           username: ${{ steps.jfrog.outputs.oidc-user }}
           password: ${{ steps.jfrog.outputs.oidc-token }}
-#          username: ${{ secrets.registry_username }}
-#          password: ${{ secrets.registry_password }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -85,14 +106,22 @@ jobs:
           push: true
           platforms: ${{ inputs.platforms }}
           tags: |
-            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ env.IMAGE_NAME }}:latest
-            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:latest
+            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Attest
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
+        id: attest
+        with:
+          subject-name: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
       - name: JFrog build add context
         env:
-          JFROG_CLI_BUILD_NAME: ${{ env.IMAGE_NAME }}
+          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
           JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
         run: |
           jf rt build-collect-env
@@ -100,11 +129,11 @@ jobs:
 
       - name: JFrog build add images
         env:
-          JFROG_CLI_BUILD_NAME: ${{ env.IMAGE_NAME }}
+          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
           JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
         run: |
           # Pull image manifest
-          docker manifest inspect ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} > manifest.json
+          docker manifest inspect ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }} > manifest.json
 
           # Iterate over platforms
           platforms=$(echo ${{ inputs.platforms }} | tr ',' ' ')
@@ -115,13 +144,13 @@ jobs:
               --arg os "${os}" \
               --arg arch "${arch}" \
               '.manifests[] | select(.platform.os==$os and .platform.architecture==$arch) | .digest' manifest.json)
-            echo "${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}@${digest}" > image-file
+            echo "${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }}@${digest}" > image-file
             jf rt build-docker-create --image-file=image-file ${{ inputs.image_reportory }}
           done
 
       - name: JFrog build publish
         env:
-          JFROG_CLI_BUILD_NAME: ${{ env.IMAGE_NAME }}
+          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
           JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
         run: |
           jf rt build-publish
