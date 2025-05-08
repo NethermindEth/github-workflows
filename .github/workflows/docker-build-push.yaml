@@ -111,6 +111,7 @@ jobs:
           # Subsequent steps can now access code under './worldcoin-backup-service'
       - name: List checked out code
         run: |
+          echo "Current branch/ref/sha/commit" {{ github.ref }}
           echo "Listing checked out code"
           ls -laR .
 
