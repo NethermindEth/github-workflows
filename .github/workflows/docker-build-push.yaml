@@ -138,6 +138,7 @@ jobs:
         with:
           images: ${{ inputs.artifactory_url }}/${{ inputs.artifactory_repo }}/${{ inputs.image_name }}
           tags: |
+            type=raw,value=${{ steps.checkout.outputs.ref }}
             type=raw,value=latest
             type=ref,event=branch
             type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || '' }},enable=${{ github.ref_type == 'tag' }}
