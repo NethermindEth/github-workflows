@@ -111,15 +111,16 @@ jobs:
 
           # Subsequent steps can now access code under './worldcoin-backup-service'
       - name: List checked out code
+        id: checkout-code-sha
         run: |
           echo "Current branch/ref/sha/commit" ${GITHUB_REF}
           set
           echo "Listing checked out code"
           ls -laR .
-#          GIT_SHA_SHORT=$(git log -1 --format=%h)
-#          echo "GIT_SHA_SHORT=$GIT_SHA_SHORT"
-#          echo "GIT_SHA_SHORT=$GIT_SHA_SHORT" >> $GITHUB_ENV
-#          echo "git_sha_short=$GIT_SHA_SHORT" >> $GITHUB_OUTPUT
+          SHA_SHORT=$(git log -1 --format=%h)
+          echo "SHA_SHORT=$SHA_SHORT"
+          echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
         env:
           GITHUB_REF: ${{ github.ref }}
 
@@ -143,7 +144,7 @@ jobs:
         with:
           images: ${{ inputs.artifactory_url }}/${{ inputs.artifactory_repo }}/${{ inputs.image_name }}
           tags: |
-            type=raw,value=${{ steps.checkout.outputs.ref }}
+            type=raw,value=${{ steps.checkout-code-sha.outputs.sha_short }}
             type=raw,value=latest
             type=ref,event=branch
             type=raw,value=${{ github.ref_type == 'tag' && github.ref_name || '' }},enable=${{ github.ref_type == 'tag' }}
