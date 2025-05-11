@@ -77,80 +77,26 @@ jobs:
           echo "HEAD_SLUG=${HEAD_SLUG}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
 
-      - name: Install JFrog CLI
-        id: jfrog
-        uses: jfrog/setup-jfrog-cli@v4
-        env:
-          JF_URL: ${{ vars.JFROG_URL }}
-          JF_PROJECT: ${{ inputs.artifactory_project }}
+      - name: Build and Push Image
+        uses: NethermindEth/github-action-image-build-and-push@main
         with:
-          oidc-provider-name: github-nethermindeth
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}
-          username: ${{ steps.jfrog.outputs.oidc-user }}
-          password: ${{ steps.jfrog.outputs.oidc-token }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          push: true
+          jfrog_url: ${{ vars.JFROG_URL }}
+          jfrog_project: ${{ inputs.artifactory_project }}
+          registry_url: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}
+          image_name: ${{ inputs.image_name }}
+          image_tags: ${{ env.IMAGE_TAG }}
           platforms: ${{ inputs.platforms }}
-          tags: |
-            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:latest
-            ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache_from: type=gha
+          cache_to: type=gha,mode=max
 
-      - name: Attest
-        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
-        id: attest
+      - name: Publish JFrog build-info
+        uses: NethermindEth/github-action-jfrog-build-info@main
         with:
-          subject-name: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
-
-      - name: JFrog build add context
-        env:
-          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
-          JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
-        run: |
-          jf rt build-collect-env
-          jf rt build-add-git
-
-      - name: JFrog build add images
-        env:
-          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
-          JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
-        run: |
-          # Pull image manifest
-          docker manifest inspect ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }} > manifest.json
-
-          # Iterate over platforms
-          platforms=$(echo ${{ inputs.platforms }} | tr ',' ' ')
-          for platform in $platforms; do
-            os=$(echo $platform | cut -d'/' -f1)
-            arch=$(echo $platform | cut -d'/' -f2)
-            digest=$(jq -r \
-              --arg os "${os}" \
-              --arg arch "${arch}" \
-              '.manifests[] | select(.platform.os==$os and .platform.architecture==$arch) | .digest' manifest.json)
-            echo "${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}:${{ env.IMAGE_TAG }}@${digest}" > image-file
-            jf rt build-docker-create --image-file=image-file ${{ inputs.image_reportory }}
-          done
-
-      - name: JFrog build publish
-        env:
-          JFROG_CLI_BUILD_NAME: ${{ inputs.image_name }}
-          JFROG_CLI_BUILD_NUMBER: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
-        run: |
-          jf rt build-publish
+          jfrog_url: ${{ vars.JFROG_URL }}
+          jfrog_project: ${{ inputs.artifactory_project }}
+          build_name: ${{ inputs.image_name }}
+          build_number: ${{ env.HEAD_SLUG }}-${{ github.run_number }}
+          image_reportory: ${{ inputs.image_reportory }}
+          image_full_name: ${{ vars.JFROG_HOST }}/${{ inputs.image_reportory }}/${{ inputs.image_name }}
+          image_tag: ${{ env.IMAGE_TAG }}
+          platforms: ${{ inputs.platforms }}
