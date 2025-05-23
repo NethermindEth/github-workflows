@@ -33,8 +33,10 @@ jobs:
       setup-qemu: false
       dockerfile_path: 'Dockerfile'
       additional_tags: ''                      # Example: 'latest,1.0.0'
+      login_with_oidc: false
 
-    # Required secrets
+    # Optional secrets - Deprecated
     secrets:
+      # Use those secrets if you don't have the OIDC enabled yet
       artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
       artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}      # Repository prefix, e.g. 'angkor'

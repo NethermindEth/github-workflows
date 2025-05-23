@@ -22,9 +22,7 @@ jobs:
       image_name: 'service-a'
       context: 'service_a/'
       dockerfile_path: 'service_a/Dockerfile'
-    secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
-      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}
+      login_with_oidc: true
 
   build_service_b:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
@@ -32,6 +30,4 @@ jobs:
       image_name: 'service-b'
       context: 'service_b/'
       dockerfile_path: 'service_b/Dockerfile'
-    secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}
-      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}
+      login_with_oidc: true

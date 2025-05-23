@@ -34,8 +34,10 @@ jobs:
       # Optional inputs (with defaults shown)
       jfrog_url: 'nethermind.jfrog.io'
       image_name: '<repository-name>'
+      login_with_oidc: false
 
-    # Required secrets
+    # Optional secrets - Deprecated
+    # Use those secrets if you don't have the OIDC enabled yet
     secrets:
       artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
       artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}      # Repository prefix, e.g. 'angkor'
