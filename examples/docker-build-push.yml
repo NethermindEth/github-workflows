@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build_private_image:
     uses: NethermindEth/github-workflows/.github/workflows/docker-build-push.yaml@main
     with:
       # Optional inputs (with their defaults shown)
@@ -27,9 +27,21 @@ jobs:
       dockerfile_path: 'Dockerfile'
       additional_tags: ''                      # Example: 'latest,1.0.0'
       # Required Inputs
-      artifactory_repo: 'angkor-oci-local'
+      group_name: ''  # For example kyoto, nubia, angkor, etc
 
-    # Required secrets
+  build_public_image:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push.yaml@main
+    with:
+      # Optional inputs (with their defaults shown)
+      image_name: '<repository-name>'
+      platforms: 'linux/amd64,linux/arm64'
+      context: '.'
+      setup-qemu: false
+      dockerfile_path: 'Dockerfile'
+      additional_tags: ''                      # Example: 'latest,1.0.0'
+      # Required Inputs
+      is_public_image: true
+      dockerhub_repo: 'nethermindeth'  # Default value
     secrets:
-      artifactory_access_token: ${{ secrets.ARTIFACTORY_TOKEN }}     # JFrog access token
-      artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}      # Repository prefix, e.g. 'angkor'
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}

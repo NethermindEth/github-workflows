@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  build_service_a:
+  build_private_service:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
       image_name: 'service-a'
@@ -24,10 +24,14 @@ jobs:
       context: 'service_a/'
       dockerfile_path: 'service_a/Dockerfile'
 
-  build_service_b:
+  build_public_service:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
+      is_public_image: true
       image_name: 'service-b'
-      group_name: 'kyoto'
+      dockerhub_repo: 'nethermindeth'  # Default value
       context: 'service_b/'
       dockerfile_path: 'service_b/Dockerfile'
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
