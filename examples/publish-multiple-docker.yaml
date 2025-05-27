@@ -20,14 +20,14 @@ jobs:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
       image_name: 'service-a'
+      group_name: 'kyoto'
       context: 'service_a/'
       dockerfile_path: 'service_a/Dockerfile'
-      login_with_oidc: true
 
   build_service_b:
     uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
     with:
       image_name: 'service-b'
+      group_name: 'kyoto'
       context: 'service_b/'
       dockerfile_path: 'service_b/Dockerfile'
-      login_with_oidc: true
