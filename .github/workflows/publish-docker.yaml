@@ -126,6 +126,9 @@ jobs:
             echo "IMAGE_NAME=${{ inputs.jfrog_url }}/${IMAGE_NAME}" >> $GITHUB_ENV
           fi
 
+          # A single platform is needed for trivy
+          echo PLATFORM=$(echo ${{ inputs.platforms }} | cut -d ',' -f 1) >> $GITHUB_ENV
+
 
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -179,13 +182,13 @@ jobs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile_path }}
-          platforms: ${{ inputs.platforms }}
-          push: false
+          platforms: ${{ env.PLATFORM }}
           tags: temporary-tag
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          load: false
+          load: true
+          push: false
           secrets: ${{ inputs.docker_secrets }}
           secret-envs: ${{ inputs.docker_secret_envs }}
           secret-files: ${{ inputs.docker_secret_files }}
@@ -209,18 +212,26 @@ jobs:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
 
-      - name: Push to Registry
-        run: |
-          TMP_TAG=temporary-tag
-          NEW_TAGS="${{ steps.meta.outputs.tags }}"
-          # Process each tag separately by splitting the comma-separated string
-          IFS=',' read -ra TAGS <<< "$NEW_TAGS"
-          for TAG in "${TAGS[@]}"; do
-            if [ -n "$TAG" ]; then
-              echo "Creating image with tag: $TAG"
-              docker buildx imagetools create -t "$TAG" "$TMP_TAG"
-            fi
-          done
+      
+
+      - name: Build and push
+        id: build_push
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ inputs.platforms }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: false
+          push: true
+          secrets: ${{ inputs.docker_secrets }}
+          secret-envs: ${{ inputs.docker_secret_envs }}
+          secret-files: ${{ inputs.docker_secret_files }}
+          ulimit: ${{ inputs.docker_ulimit }}
+          build-args: ${{ inputs.docker_build_args }}
 
       - name: Attest
         if: ${{ success() }}
@@ -228,7 +239,7 @@ jobs:
         id: attest
         with:
           subject-name: ${{ steps.meta.outputs.tags }}
-          subject-digest: ${{ steps.build_no_push.outputs.digest }}
+          subject-digest: ${{ steps.build_push.outputs.digest }}
           push-to-registry: true
 
       - name: Summary
