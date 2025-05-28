@@ -112,10 +112,10 @@ jobs:
           # Set Repo name
           if [[ "${{ inputs.is_public_image }}" ]]; then
             echo "REPO_NAME=${{ inputs.dockerhub_repo }}" >> $GITHUB_ENV
-          elif [[ -z "${{ secrets.artifactory_username }}" ]]; then
-            echo "REPO_NAME=${{ secrets.artifactory_username }}-oci-local-dev" >> $GITHUB_ENV
-          elif [[ -z "${{ inputs.group_name }}" ]]; then
+          elif [[ -n "${{ inputs.group_name }}" ]]; then
             echo "REPO_NAME=${{ inputs.group_name }}-oci-local-dev" >> $GITHUB_ENV
+          elif [[ -n "${{ secrets.artifactory_username }}" ]]; then
+            echo "REPO_NAME=${{ secrets.artifactory_username }}-oci-local-dev" >> $GITHUB_ENV
           else
             echo "Unable to determine the repo name.  Please set the group_name input if you are using a private image or the repo_name input if you are using a public image."
             exit 1
