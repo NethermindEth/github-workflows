@@ -185,7 +185,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          load: true
+          load: false
           secrets: ${{ inputs.docker_secrets }}
           secret-envs: ${{ inputs.docker_secret_envs }}
           secret-files: ${{ inputs.docker_secret_files }}
