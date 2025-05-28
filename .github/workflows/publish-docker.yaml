@@ -129,7 +129,7 @@ jobs:
             echo "IMAGE_NAME=${{ inputs.jfrog_url }}/${IMAGE_NAME}" >> $GITHUB_ENV
           fi
 
-          # A single platform is needed for trivy
+          # A single platform is needed for trivy and for the build-push action
           echo PLATFORM=$(echo ${{ inputs.platforms }} | cut -d ',' -f 1) >> $GITHUB_ENV
 
           # Create .trivyignore if it doesn't exist
@@ -182,6 +182,11 @@ jobs:
             ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
 
       - name: Build (no push)
+        # The idea here is to first build the image without pushing it, so it can be
+        # scanned by Trivy.
+        # Also, since it's not going to be pushed, it MUST use a single platform
+        # Ref: https://github.com/docker/buildx/issues/59
+        # The usage of cache helps the next step when it builds again, but multi-arch
         id: build_no_push
         uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:
@@ -216,8 +221,6 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true
-
-      
 
       - name: Build and push
         id: build_push
