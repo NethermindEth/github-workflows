@@ -1,0 +1,92 @@
+name: Resusable pull image from GCloud repo and push image to jfrog Artifactory
+
+env:
+  DOCKER_REGISTRY: nethermind.jfrog.io
+
+on:
+  workflow_dispatch:
+    inputs:
+      sa_key_path:
+        description: 'Path to GCP service account key JSON file'
+        type: string
+        required: true
+      gcp_repo:
+        description: 'GCP repo domain (e.g., gcr.io or us-central1-docker.pkg.dev)'
+        type: string
+        required: true
+      image_name:
+        description: 'Image name (e.g., project/image)'
+        type: string
+        required: true
+      new_image_name:
+        description: 'New image name (e.g., image)'
+        type: string
+        required: true
+      image_tag:
+        description: 'Image tag (e.g., v0.1.1)'
+        type: string
+        required: true
+      jfrog_repo:
+        description: 'Full target JFrog repo including registry and repo'
+        type: string
+        required: true
+
+  workflow_call:
+    inputs:
+      sa_key_path:
+        description: 'Path to GCP service account key JSON file'
+        type: string
+        required: true
+      gcp_repo:
+        description: 'GCP repo domain (e.g., gcr.io or us-central1-docker.pkg.dev)'
+        type: string
+        required: true
+      image_name:
+        description: 'Image name (e.g., project/image)'
+        type: string
+        required: true
+      new_image_name:
+        description: 'New image name (e.g., image)'
+        type: string
+        required: true
+      image_tag:
+        description: 'Image tag (e.g., v0.1.1)'
+        type: string
+        required: true
+      jfrog_repo:
+        description: 'Full target JFrog repo including registry and repo (e.g., )'
+        type: string
+        required: true
+
+jobs:
+  transfer-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Decode and write GCP service account key to file
+        run: |
+          echo "${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}" > gcp-key.json
+
+      - name: Authenticate to GCP
+        run: |
+          gcloud auth activate-service-account --key-file=gcp-key.json
+          gcloud auth configure-docker ${{ inputs.gcp_repo || github.event.inputs.gcp_repo }} --quiet
+
+      - name: Pull image from GCP
+        run: |
+          docker pull ${{ inputs.gcp_repo || github.event.inputs.gcp_repo }}/${{ inputs.image_name || github.event.inputs.image_name }}:${{ inputs.image_tag || github.event.inputs.image_tag }}
+
+      - name: Tag image for JFrog
+        run: |
+          docker tag ${{ inputs.gcp_repo || github.event.inputs.gcp_repo }}/${{ inputs.image_name || github.event.inputs.image_name }}:${{ inputs.image_tag || github.event.inputs.image_tag }}  ${{ inputs.jfrog_repo || github.event.inputs.jfrog_repo }}/${{ inputs.new_image_name || github.event.inputs.new_image_name }}:${{ inputs.image_tag || github.event.inputs.image_tag }}
+
+      - name: Login to Docker Registry
+        run: |
+          docker login ${{ env.DOCKER_REGISTRY }} -u ${{ secrets.ARTIFACTORY_ANGKOR_USERNAME }} -p ${{ secrets.ARTIFACTORY_ANGKOR_TOKEN_CONTRIBUTOR }}
+
+      - name: Push image to JFrog
+        run: |
+          docker push ${{ inputs.jfrog_repo || github.event.inputs.jfrog_repo }}/${{ inputs.new_image_name || github.event.inputs.new_image_name }}:${{ inputs.image_tag || github.event.inputs.image_tag }}
