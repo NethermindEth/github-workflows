@@ -55,6 +55,26 @@ on:
         type: boolean
         default: false
         required: false
+      docker_secrets:
+        description: "List of secrets to expose to the build (e.g., key=string, GIT_AUTH_TOKEN=mytoken)"
+        type: string
+        required: false
+      docker_secret_envs:
+        description: "List of secret env vars to expose to the build (e.g., key=envname, MY_SECRET=MY_ENV_VAR)"
+        required: false
+        type: string
+      docker_secret_files:
+        description: "List of secret files to expose to the build (e.g., key=filename, MY_SECRET=./secret.txt)"
+        required: false
+        type: string
+      docker_ulimit:
+        description: "Ulimit options (e.g., nofile=1024:1024)"
+        required: false
+        type: string
+      docker_build_args:
+        description: "List of build-time variables"
+        required: false
+        type: string
 
     secrets:
       # DEPRECATED: It's still here so it doesn't break any old pipelines
@@ -166,6 +186,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
+          secrets: ${{ inputs.docker_secrets }}
+          secret-envs: ${{ inputs.docker_secret_envs }}
+          secret-files: ${{ inputs.docker_secret_files }}
+          ulimit: ${{ inputs.docker_ulimit }}
+          build-args: ${{ inputs.docker_build_args }}
 
       - name: Run Trivy vulnerability scanner
         id: trivy

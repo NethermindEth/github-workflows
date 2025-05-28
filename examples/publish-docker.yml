@@ -34,3 +34,8 @@ jobs:
       setup-qemu: false
       dockerfile_path: 'Dockerfile'
       additional_tags: ''                      # Example: 'latest,1.0.0'
+      docker_secrets: ''
+      docker_secret_envs: ''
+      docker_secret_files: ''
+      docker_ulimit: ''
+      docker_build_args: ''
