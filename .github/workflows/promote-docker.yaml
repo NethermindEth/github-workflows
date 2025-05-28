@@ -14,7 +14,9 @@ on:
       group_name:
         description: "Name of the group in Nethermind.  Example: nubia, kyoto, etc"
         type: string
-        required: true
+        # This is optional only temporarily to allow for the transition to the new pipeline
+        required: false
+        default: ""
       target_env:
         description: 'Target environment to promote to (either staging or prod)'
         type: string
@@ -51,8 +53,8 @@ jobs:
           SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
           echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
 
-          SOURCE_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${SOURCE_ENV}/${{ inputs.image_name }}"
-          TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
+          SOURCE_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name || secrets.artifactory_username }}-oci-local-${SOURCE_ENV}/${{ inputs.image_name }}"
+          TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name || secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
           echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
           echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
 
