@@ -104,6 +104,9 @@ jobs:
     name: Build and publish Docker image
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
       - name: Set env vars
         run: |
           # Set Repo name
@@ -129,9 +132,11 @@ jobs:
           # A single platform is needed for trivy
           echo PLATFORM=$(echo ${{ inputs.platforms }} | cut -d ',' -f 1) >> $GITHUB_ENV
 
-
-      - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          # Create .trivyignore if it doesn't exist
+          if [[ ! -f .trivyignore ]]; then
+            echo "Creating .trivyignore file"
+            touch .trivyignore
+          fi
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
