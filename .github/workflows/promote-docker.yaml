@@ -67,7 +67,7 @@ jobs:
         id: jfrog
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: ${{ inputs.jfrog_url }}
+          JF_URL: https://${{ inputs.jfrog_url }}
         with:
           oidc-provider-name: github-nethermindeth
 
