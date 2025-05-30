@@ -1,6 +1,11 @@
 on:
   workflow_call:
     inputs:
+      repo_name:
+        description: "Name of the repository to publish to"
+        type: string
+        required: false
+        default: ""
       is_public_image:
         type: boolean
         default: false
@@ -110,7 +115,9 @@ jobs:
       - name: Set env vars
         run: |
           # Set Repo name
-          if [[ "${{ inputs.is_public_image }}" ]]; then
+          if [[ -n "${{ inputs.repo_name }}" ]]; then
+            echo "REPO_NAME=${{ inputs.repo_name }}" >> $GITHUB_ENV
+          elif [[ "${{ inputs.is_public_image }}" ]]; then
             echo "REPO_NAME=${{ inputs.dockerhub_repo }}" >> $GITHUB_ENV
           elif [[ -n "${{ inputs.group_name }}" ]]; then
             echo "REPO_NAME=${{ inputs.group_name }}-oci-local-dev" >> $GITHUB_ENV
