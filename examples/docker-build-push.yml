@@ -15,33 +15,70 @@ permissions:
   contents: read
 
 jobs:
-  build_private_image:
-    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push.yaml@main
+  build_private_image_simple:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-jfrog.yaml@main
     with:
-      # Optional inputs (with their defaults shown)
-      artifactory_url: 'nethermind.jfrog.io'
-      image_name: '<repository-name>'
-      platforms: 'linux/amd64,linux/arm64'
-      context: '.'
-      setup-qemu: false
-      dockerfile_path: 'Dockerfile'
-      additional_tags: ''                      # Example: 'latest,1.0.0'
-      # Required Inputs
-      group_name: ''  # For example kyoto, nubia, angkor, etc
+      group_name: 'nubia'
+      image_name: 'juno'
 
-  build_public_image:
-    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push.yaml@main
+  # This workflow is an example with all of the possible inputs
+  build_private_image_explanation:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-jfrog.yaml@main
     with:
-      # Optional inputs (with their defaults shown)
-      image_name: '<repository-name>'
+      # To decide the name of the repo, you can use the repo_name
+      # input or the group_name input
+      # The easiest and recommended one is to use the group_name
+      group_name: ''  # Example kyoto, nubia, angkor, etc
+
+      # If you need to push into a repo which is not dev
+      # (anti-pattern btw), you can use the repo_name input
+      repo_name: ''  # example kyoto-oci-local-staging
+
+      image_name: '<repository-name>'  # Example: 'my_awesome_backend'
+
+      # By default latest and the git sha are added
+      # Use this if you want something custom, for example a semver.
+      additional_tags: ''
+
       platforms: 'linux/amd64,linux/arm64'
       context: '.'
       setup-qemu: false
       dockerfile_path: 'Dockerfile'
-      additional_tags: ''                      # Example: 'latest,1.0.0'
-      # Required Inputs
-      is_public_image: true
-      dockerhub_repo: 'nethermindeth'  # Default value
+      docker_secrets: ''
+      docker_secret_envs: ''
+      docker_secret_files: ''
+      docker_ulimit: ''
+      docker_build_args: ''
+
+
+  build_public_image_simple:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-dockerhub.yaml@main
+    with:
+      repo_name: 'nubia'
+      image_name: 'juno'
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
+
+  build_public_image_explanation:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-dockerhub.yaml@main
+    with:
+      # By default it pushes it to nethermindeth, which is a test repo
+      # in dockerhub.  If you want to push to a different repo, you can
+      # set this value.
+      repo_name: 'nethermindeth'
+
+      # By default it uses the repository name as the image name
+      image_name: '<repository-name>'
+
+      # By default latest and the git sha are added
+      # Use this if you want something custom, for example a semver.
+      additional_tags: ''
+
+      platforms: 'linux/amd64,linux/arm64'
+      context: '.'
+      setup-qemu: false
+      dockerfile_path: 'Dockerfile'
     secrets:
       dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
