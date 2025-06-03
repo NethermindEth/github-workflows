@@ -66,7 +66,7 @@ All workflows include:
 
 ## License
 
-Copyright (c) 2024 Nethermind - All rights reserved
+Copyright (c) 2025 Nethermind - All rights reserved
 
 This is an internal repository containing proprietary workflows and examples.
 See [LICENSE](LICENSE) file for details.
