@@ -6,31 +6,31 @@ This repository contains reusable GitHub Actions workflows for Nethermind projec
 
 ### Build and Publish
 
-The workflow for building and publishing Docker images to Artifactory.
-
-**Implementation:** [`.github/workflows/publish-docker.yaml`](.github/workflows/publish-docker.yaml)  
-**Example:** [`examples/publish-docker.yml`](examples/publish-docker.yml)
-
 Features:
-- Multi-platform builds (linux/amd64, linux/arm64)
-- Automatic tagging based on git refs
-- Security scanning with Trivy
-- Build provenance attestation
-- Caching support
-- Publishes to dev environment
+- Multi-platform builds (linux/amd64, linux/arm64 by default)
+- Automatic repository naming based on group name
+- OIDC authentication with JFrog
+- Flexible build configuration (context, dockerfile path, build args, secrets)
+- Build attestation support
+- Custom additional tags
 
-Build Process:
-1. Build image without pushing
-2. Run Trivy vulnerability scan (CRITICAL,HIGH)
-3. Push to registry if scan passes
-4. Create and upload attestation
+#### JFrog Artifactory
+
+The workflow for building and publishing Docker images to JFrog Artifactory.
+
+**Implementation:** [`.github/workflows/docker-build-push-jfrog.yaml`](.github/workflows/docker-build-push-jfrog.yaml)  
+**Example:** [`examples/docker-build-push-jfrog.yml`](examples/docker-build-push-jfrog.yml)
+
+#### Docker Hub
+
+The workflow for building and publishing Docker images to Docker Hub.
+
+**Implementation:** [`.github/workflows/docker-build-push-dockerhub.yaml`](.github/workflows/docker-build-push-dockerhub.yaml)  
+**Example:** [`examples/docker-build-push-dockerhub.yml`](examples/docker-build-push-dockerhub.yml)
 
 ### Promote
 
 The workflow for promoting Docker images between environments (dev → staging → prod).
-
-**Implementation:** [`.github/workflows/promote-docker.yaml`](.github/workflows/promote-docker.yaml)  
-**Example:** [`examples/promote-docker.yml`](examples/promote-docker.yml)
 
 Features:
 - Promotes images between environments
@@ -38,13 +38,16 @@ Features:
 - Supports multiple tags promotion
 - Detailed promotion summary
 
-## Actions
+#### JFrog Artifactory
 
-### Get Group Topic
+**Implementation:** [`.github/workflows/docker-promote-jfrog.yaml`](.github/workflows/docker-promote-jfrog.yaml)  
+**Example:** [`examples/docker-promote-jfrog.yml`](examples/docker-promote-jfrog.yml)
 
-Located in [`.github/actions/get-group-topic/action.yaml`](.github/actions/get-group-topic/action.yaml)
+#### Docker Hub
 
-A utility action that determines the appropriate group name for Artifactory repositories based on repository topics.
+**Implementation:** [`.github/workflows/docker-promote-dockerhub.yaml`](.github/workflows/docker-promote-dockerhub.yaml)  
+**Example:** [`examples/docker-promote-dockerhub.yml`](examples/docker-promote-dockerhub.yml)
+
 
 ## Environment Flow
 
