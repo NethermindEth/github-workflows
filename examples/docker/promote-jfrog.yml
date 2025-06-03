@@ -1,0 +1,32 @@
+name: Docker Image Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target environment to promote to'
+        type: choice
+        options: ['staging', 'prod']
+        required: true
+      tags:
+        description: 'Tags to promote (comma-separated)'
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  promote:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-promote-jfrog.yaml@main
+    with:
+      image_name: aztec-p2p-explorer
+      group_name: modular
+      target_env: ${{ inputs.target_env }}
+      tags: ${{ inputs.tags }}
