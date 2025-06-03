@@ -20,6 +20,11 @@ on:
         description: 'Target environment to promote to (either staging or prod)'
         type: string
         required: true
+      source_env:
+        description: 'Source environment to promote from (either dev or staging)'
+        type: string
+        required: false
+        default: "none"
       tags:
         description: 'Tags to promote (comma-separated)'
         type: string
@@ -37,10 +42,20 @@ jobs:
             exit 1
           fi
 
+          if [[ ! "${{ inputs.source_env }}" =~ ^(dev|staging|none)$ ]]; then
+            echo "Invalid environment. Choose 'dev', 'staging' or don't set it"
+            exit 1
+          fi
+
       - name: Set environment variables
         run: |
-          SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
-          echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
+          if [[ "${{ inputs.source_env }}" == "none" ]]; then
+            SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
+            echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
+          else
+            SOURCE_ENV="${{ inputs.source_env }}"
+            echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
+          fi
 
           SOURCE_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${SOURCE_ENV}/${{ inputs.image_name }}"
           TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
