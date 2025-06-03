@@ -1,3 +1,5 @@
+# DEPRECATED: Use docker-build-push-jfrog.yaml or docker-build-push-dockerhub.yaml instead
+
 on:
   workflow_call:
     inputs:
