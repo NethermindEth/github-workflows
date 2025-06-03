@@ -1,0 +1,133 @@
+on:
+  workflow_call:
+    inputs:
+      repo_name:
+        description: "Name of the repository to publish to"
+        type: string
+        required: false
+        default: ""
+      jfrog_url:
+        description: "URL of Artifactory server"
+        type: string
+        default: "nethermind.jfrog.io"
+        required: false
+      image_name:
+        description: "Name of the image to publish.  Defaults to the repository name."
+        type: string
+        required: false
+        default: "${{ github.event.repository.name }}"
+      group_name:
+        description: "Name of the group in Nethermind.  Example: nubia, kyoto, etc"
+        type: string
+        required: false
+        default: ""
+      push:
+        description: "Whether or not to push to Artifactory"
+        type: boolean
+        default: true
+        required: false
+      context:
+        description: "Build's context is the set of files located in the specified PATH or URL"
+        type: string
+        default: "."
+        required: false
+      platforms:
+        description: "Platforms to build for (comma-separated)"
+        type: string
+        default: "linux/amd64,linux/arm64"
+        required: false
+      setup-qemu:
+        description: "Set up QEMU"
+        type: boolean
+        default: false
+        required: false
+      dockerfile_path:
+        description: "Path to Dockerfile"
+        type: string
+        default: "Dockerfile"
+        required: false
+      additional_tags:
+        description: "Additional tags to apply (comma-separated)"
+        type: string
+        default: ""
+        required: false
+      docker_secrets:
+        description: "List of secrets to expose to the build (e.g., key=string, GIT_AUTH_TOKEN=mytoken)"
+        type: string
+        required: false
+      docker_secret_envs:
+        description: "List of secret env vars to expose to the build (e.g., key=envname, MY_SECRET=MY_ENV_VAR)"
+        required: false
+        type: string
+      docker_secret_files:
+        description: "List of secret files to expose to the build (e.g., key=filename, MY_SECRET=./secret.txt)"
+        required: false
+        type: string
+      docker_ulimit:
+        description: "Ulimit options (e.g., nofile=1024:1024)"
+        required: false
+        type: string
+      docker_build_args:
+        description: "List of build-time variables"
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set env vars
+        run: |
+          # Set Repo name
+          if [[ -n "${{ inputs.repo_name }}" ]]; then
+            echo "REPO_NAME=${{ inputs.repo_name }}" >> $GITHUB_ENV
+          elif [[ -n "${{ inputs.group_name }}" ]]; then
+            echo "REPO_NAME=${{ inputs.group_name }}-oci-local-dev" >> $GITHUB_ENV
+          else
+            echo "Unable to determine the repo name.  Please set either group_name or the repo_name.
+            exit 1
+          fi
+
+          # Set image name
+          IMAGE_NAME="${{ inputs.jfrog_url }}/${{ env.REPO_NAME }}/${{ inputs.image_name }}" >> $GITHUB_ENV
+
+      - name: Install JFrog CLI
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://${{ inputs.jfrog_url }}
+        with:
+          oidc-provider-name: github-nethermindeth
+
+      - name: Login to Registry with OIDC
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ${{ inputs.jfrog_url }}
+          username: ${{ steps.jfrog.outputs.oidc-user }}
+          password: ${{ steps.jfrog.outputs.oidc-token }}
+
+      - name: Build and push
+        uses: NethermindEth/github-action-image-build-and-push@9d4a91878e15e6014e3d1f463999e169cadca825
+        with:
+          registry: "artifactory"
+          image_name: ${{ env.IMAGE_NAME }}
+          image_tags: ${{ inputs.additional_tags }}
+          push-to-registry: ${{ inputs.push }}
+          platforms: ${{ inputs.platforms }}
+          context: ${{ inputs.context }}
+          dockerfile_path: ${{ inputs.dockerfile_path }}
+          setup-qemu: ${{ inputs.setup-qemu }}
+          secrets: ${{ inputs.docker_secrets }}
+          secret-envs: ${{ inputs.docker_secret_envs }}
+          secret-files: ${{ inputs.docker_secret_files }}
+          ulimit: ${{ inputs.docker_ulimit }}
+          build-args: ${{ inputs.docker_build_args }}
