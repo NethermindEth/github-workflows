@@ -61,6 +61,11 @@ on:
         description: "List of build-time variables"
         required: false
         type: string
+      ignore_trivy:
+        description: "Ignore Trivy scan errors"
+        required: false
+        type: boolean
+        default: false
     secrets:
       dockerhub_username:
         description: "Docker Hub username"
@@ -89,7 +94,7 @@ jobs:
           password: ${{ secrets.dockerhub_password }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@9d4a91878e15e6014e3d1f463999e169cadca825
+        uses: NethermindEth/github-action-image-build-and-push@bb683244b10d8aae21baf577b2e9ab4056236063
         with:
           registry: "dockerhub"
           image_name: ${{ inputs.repo_name }}/${{ inputs.image_name }}
@@ -104,3 +109,4 @@ jobs:
           secret-files: ${{ inputs.docker_secret_files }}
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
+          ignore_trivy: ${{ inputs.ignore_trivy }}
