@@ -1,0 +1,87 @@
+on:
+  workflow_call:
+    inputs:
+      source_repo_name:
+        description: "Name of the repository to get the image from"
+        type: string
+        required: false
+        default: "nethermindeth"
+      target_repo_name:
+        description: "Name of the repository to push the image to"
+        type: string
+        required: false
+        default: "nethermind"
+      image_name:
+        description: 'Name of the image to publish.  Defaults to the repository name.'
+        type: string
+        required: false
+        default: "${{ github.event.repository.name }}"
+      tags:
+        description: 'Tags to promote (comma-separated)'
+        type: string
+        required: true
+    secrets:
+      dockerhub_username:
+        description: "Docker Hub username"
+        required: true
+      dockerhub_password:
+        description: "Docker Hub password"
+        required: true
+
+jobs:
+  promote:
+    name: Promote Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set environment variables
+        run: |
+          SOURCE_IMAGE="${{ inputs.source_repo_name }}/${{ inputs.image_name }}"
+          TARGET_IMAGE="${{ inputs.target_repo_name }}/${{ inputs.image_name }}"
+          echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
+          echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
+
+
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          username: ${{ secrets.dockerhub_username }}
+          password: ${{ secrets.dockerhub_password }}
+
+      - name: Setup oras cli
+        uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1.2.3
+
+      - name: Promote Images
+        id: promote
+        run: |
+          # Promote all specified tags
+          IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
+          for TAG in "${TAGS[@]}"; do
+            source_image="${SOURCE_IMAGE}:${TAG}"
+            target_image="${TARGET_IMAGE}:${TAG}"
+            echo "Promoting ${source_image} to ${target_image}"
+
+            oras cp -r ${source_image} ${target_image}
+
+            # Get image digest and add it to the subject.checksums.txt file
+            DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
+            echo "${DIGEST}  ${TAG}" >> subject.checksums.txt
+          done
+
+      - name: Attest
+        uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd # v2.3.0
+        id: attest
+        with:
+          subject-name: ${{ env.TARGET_IMAGE }}
+          subject-checksums: subject.checksums.txt
+          push-to-registry: true
+
+      - name: Record Promotion
+        run: |
+          echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "- From: $SOURCE_IMAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- To: $TARGET_IMAGE" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

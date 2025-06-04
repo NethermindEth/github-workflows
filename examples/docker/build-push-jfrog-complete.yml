@@ -1,0 +1,41 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  # This workflow is an example with all of the possible inputs
+  build_complete:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-jfrog.yaml@main
+    with:
+      # To decide the name of the repo, you can use the repo_name
+      # input or the group_name input
+      # The easiest and recommended one is to use the group_name
+      group_name: ''  # Example kyoto, nubia, angkor, etc
+
+      # If you need to push into a repo which is not dev
+      # (anti-pattern btw), you can use the repo_name input
+      repo_name: ''  # example kyoto-oci-local-staging
+
+      image_name: '<repository-name>'  # Example: 'my_awesome_backend'
+
+      # By default latest and the git sha are added
+      # Use this if you want something custom, for example a semver.
+      additional_tags: ''
+
+      platforms: 'linux/amd64,linux/arm64'
+      context: '.'
+      setup-qemu: false
+      dockerfile_path: 'Dockerfile'
+      docker_secrets: ''
+      docker_secret_envs: ''
+      docker_secret_files: ''
+      docker_ulimit: ''
+      docker_build_args: ''

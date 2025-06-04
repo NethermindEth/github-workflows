@@ -1,0 +1,30 @@
+name: Docker Image Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Tags to promote (comma-separated)'
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  promote:
+    uses: NethermindEth/github-workflows/.github/workflows/docker-promote-dockerhub.yaml@main
+    with:
+      source_repo_name: 'nethermindeth'  # This is the default value
+      target_repo_name: 'nethermind'     # This is the default value
+      image_name: 'juno'
+      tags: ${{ inputs.tags }}
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
