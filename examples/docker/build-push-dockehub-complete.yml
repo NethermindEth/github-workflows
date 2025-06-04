@@ -35,6 +35,7 @@ jobs:
       docker_secret_files: ''
       docker_ulimit: ''
       docker_build_args: ''
+      ignore_trivy: false
     secrets:
       dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}

@@ -71,6 +71,11 @@ on:
         description: "List of build-time variables"
         required: false
         type: string
+      ignore_trivy:
+        description: "Ignore Trivy scan errors"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -86,19 +91,20 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Set env vars
+        id: env-vars
         run: |
           # Set Repo name
           if [[ -n "${{ inputs.repo_name }}" ]]; then
-            echo "REPO_NAME=${{ inputs.repo_name }}" >> $GITHUB_ENV
+            export REPO_NAME="${{ inputs.repo_name }}"
           elif [[ -n "${{ inputs.group_name }}" ]]; then
-            echo "REPO_NAME=${{ inputs.group_name }}-oci-local-dev" >> $GITHUB_ENV
+            export REPO_NAME="${{ inputs.group_name }}-oci-local-dev"
           else
             echo "Unable to determine the repo name.  Please set either group_name or the repo_name."
             exit 1
           fi
 
           # Set image name
-          IMAGE_NAME="${{ inputs.jfrog_url }}/${{ env.REPO_NAME }}/${{ inputs.image_name }}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${{ inputs.jfrog_url }}/${REPO_NAME}/${{ inputs.image_name }}" >> $GITHUB_OUTPUT
 
       - name: Install JFrog CLI
         id: jfrog
@@ -116,10 +122,10 @@ jobs:
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@9d4a91878e15e6014e3d1f463999e169cadca825
+        uses: NethermindEth/github-action-image-build-and-push@562f93a307af9c4d4fd8f973006ed2cd7e7a1fba
         with:
           registry: "artifactory"
-          image_name: ${{ env.IMAGE_NAME }}
+          image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
           image_tags: ${{ inputs.additional_tags }}
           push-to-registry: ${{ inputs.push }}
           platforms: ${{ inputs.platforms }}
@@ -131,3 +137,4 @@ jobs:
           secret-files: ${{ inputs.docker_secret_files }}
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
+          ignore_trivy: ${{ inputs.ignore_trivy }}
