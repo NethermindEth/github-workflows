@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/NethermindEth/github-workflows/compare/v1.2.0...v1.2.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* Correct typo in error message for repo name determination in docker-build-push-jfrog.yaml ([afe4686](https://github.com/NethermindEth/github-workflows/commit/afe4686d2137c3847aac479bfee8bded80d4c229))
+
 ## [1.2.0](https://github.com/NethermindEth/github-workflows/compare/v1.1.1...v1.2.0) (2025-06-04)
 
 
