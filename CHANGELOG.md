@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/NethermindEth/github-workflows/compare/v1.1.1...v1.2.0) (2025-06-04)
+
+
+### Features
+
+* Add Docker build and push workflows for Docker Hub and JFrog Artifactory ([#59](https://github.com/NethermindEth/github-workflows/issues/59)) ([f68fb7d](https://github.com/NethermindEth/github-workflows/commit/f68fb7d4db77ea7696bd99b216c4f565e59562c5))
+* added acctions: docker-build-and-push-image and jfrog-build-pub… ([8d0255b](https://github.com/NethermindEth/github-workflows/commit/8d0255b62ec5f41f7ace640012863399d12deb08))
+* added acctions: docker-build-and-push-image and jfrog-build-publish ([1737e3e](https://github.com/NethermindEth/github-workflows/commit/1737e3e52bc41d0af575168326626503be60b11a))
+* added pipeline workflows ([cae1f0a](https://github.com/NethermindEth/github-workflows/commit/cae1f0ae2615be32bd362da4a2714666936c6f0b))
+* added pipeline workflows ([56e7c72](https://github.com/NethermindEth/github-workflows/commit/56e7c72c5c92c5c9e99dad0999e73fc520f34efd))
+* switched docker login credentials to oidc token ([9d435d5](https://github.com/NethermindEth/github-workflows/commit/9d435d513f2a6778256ccf5cb191bf18b5690aed))
+* updated pipeline-ci-pull-request ([621b1be](https://github.com/NethermindEth/github-workflows/commit/621b1be8525f2b5776508cbfe43d9ca7f4d9592b))
+
 ## [1.1.1](https://github.com/NethermindEth/github-workflows/compare/v1.1.0...v1.1.1) (2025-04-15)
 
 
