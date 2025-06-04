@@ -93,7 +93,7 @@ jobs:
           elif [[ -n "${{ inputs.group_name }}" ]]; then
             echo "REPO_NAME=${{ inputs.group_name }}-oci-local-dev" >> $GITHUB_ENV
           else
-            echo "Unable to determine the repo name.  Please set either group_name or the repo_name.
+            echo "Unable to determine the repo name.  Please set either group_name or the repo_name."
             exit 1
           fi
 
