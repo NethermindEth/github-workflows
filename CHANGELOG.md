@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/NethermindEth/github-workflows/compare/v1.2.1...v1.3.0) (2025-06-06)
+
+
+### Features
+
+* Add 'ignore_trivy' input to Docker build workflows ([1d0525f](https://github.com/NethermindEth/github-workflows/commit/1d0525fa740f879a4c9b00678bd3ccc27056e92a))
+* add example on when to push ([fab7fc5](https://github.com/NethermindEth/github-workflows/commit/fab7fc5be9ee9ac5634b3502d04a316a7d424f32))
+
 ## [1.2.1](https://github.com/NethermindEth/github-workflows/compare/v1.2.0...v1.2.1) (2025-06-04)
 
 
