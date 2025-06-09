@@ -12,12 +12,12 @@ on:
         required: false
         default: "nethermind"
       image_name:
-        description: 'Name of the image to publish.  Defaults to the repository name.'
+        description: "Name of the image to publish.  Defaults to the repository name."
         type: string
         required: false
         default: "${{ github.event.repository.name }}"
       tags:
-        description: 'Tags to promote (comma-separated)'
+        description: "Tags to promote (comma-separated)"
         type: string
         required: true
     secrets:
@@ -39,7 +39,6 @@ jobs:
           TARGET_IMAGE="${{ inputs.target_repo_name }}/${{ inputs.image_name }}"
           echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
           echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
-
 
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

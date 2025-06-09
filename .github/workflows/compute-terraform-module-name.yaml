@@ -2,7 +2,7 @@ on:
   workflow_call:
     inputs:
       repository_name:
-        description: 'Name of Terraform repository'
+        description: "Name of Terraform repository"
         type: string
         required: true
     outputs:

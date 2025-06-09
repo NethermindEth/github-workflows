@@ -4,24 +4,24 @@ on:
   workflow_call:
     inputs:
       jfrog_url:
-        description: 'URL of Artifactory server'
+        description: "URL of Artifactory server"
         type: string
-        default: 'https://nethermind.jfrog.io'
+        default: "https://nethermind.jfrog.io"
       provider_name:
-        description: 'Name of Terraform provider'
+        description: "Name of Terraform provider"
         type: string
         required: true
       module_name:
-        description: 'Name of Terraform module'
+        description: "Name of Terraform module"
         type: string
         required: true
       module_version:
-        description: 'Version of Terraform module'
+        description: "Version of Terraform module"
         type: string
         required: true
     secrets:
       artifactory_access_token:
-        description: 'A token used to communicate with Artifactory'
+        description: "A token used to communicate with Artifactory"
         required: true
 
 jobs:
@@ -53,13 +53,13 @@ jobs:
         id: trivy
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
         with:
-          scan-type: 'config'
-          scan-ref: '.'
-          format: 'table'
-          exit-code: '1'
+          scan-type: "config"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.txt'
+          severity: "CRITICAL,HIGH"
+          output: "trivy-results.txt"
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
           TRIVY_DISABLE_VEX_NOTICE: true

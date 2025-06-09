@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       target_env:
-        description: 'Target environment to promote to'
+        description: "Target environment to promote to"
         type: choice
-        options: ['staging', 'prod']
+        options: ["staging", "prod"]
         required: true
       tags:
-        description: 'Tags to promote (comma-separated)'
+        description: "Tags to promote (comma-separated)"
         type: string
         required: true
 

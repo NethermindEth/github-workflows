@@ -2,7 +2,7 @@ on:
   workflow_call:
     secrets:
       artifactory_access_token:
-        description: 'A token used to communicate with Artifactory'
+        description: "A token used to communicate with Artifactory"
         required: true
 
 jobs:

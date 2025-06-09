@@ -4,21 +4,21 @@ on:
   workflow_call:
     inputs:
       jfrog_url:
-        description: 'URL of Artifactory server'
+        description: "URL of Artifactory server"
         type: string
-        default: 'nethermind.jfrog.io'
+        default: "nethermind.jfrog.io"
         required: false
       image_name:
-        description: 'Name of the image to publish.  Defaults to the repository name.'
+        description: "Name of the image to publish.  Defaults to the repository name."
         type: string
         required: false
         default: "${{ github.event.repository.name }}"
       target_env:
-        description: 'Target environment to promote to (either staging or prod)'
+        description: "Target environment to promote to (either staging or prod)"
         type: string
         required: true
       tags:
-        description: 'Tags to promote (comma-separated)'
+        description: "Tags to promote (comma-separated)"
         type: string
         required: true
       login_with_oidc:
@@ -28,10 +28,10 @@ on:
         required: false
     secrets:
       artifactory_access_token:
-        description: 'A token used to communicate with Artifactory'
+        description: "A token used to communicate with Artifactory"
         required: false
       artifactory_username:
-        description: 'Username for Artifactory authentication'
+        description: "Username for Artifactory authentication"
         required: false
 
 jobs:
@@ -55,7 +55,6 @@ jobs:
           TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ secrets.artifactory_username }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
           echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
           echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
-
 
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

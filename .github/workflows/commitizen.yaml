@@ -2,7 +2,7 @@ on:
   workflow_call:
     secrets:
       access-token:
-        description: 'A token passed from the caller workflow'
+        description: "A token passed from the caller workflow"
         required: true
     outputs:
       version:
