@@ -18,7 +18,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v2.1.0
         with:
           repo: terraform-docs/terraform-docs
-          tag: v0.17.0
+          tag: v0.19.0
 
       - name: Install tflint
         uses: jaxxstorm/action-install-gh-release@v2.1.0
