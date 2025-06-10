@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/NethermindEth/github-workflows/compare/v1.3.1...v1.3.2) (2025-06-10)
+
+
+### Bug Fixes
+
+* Correct JFrog URL format in docker-promote-jfrog.yaml ([2dd5524](https://github.com/NethermindEth/github-workflows/commit/2dd5524de3d058fa0208c785beb35cbcd56dfc5f))
+
 ## [1.2.1](https://github.com/NethermindEth/github-workflows/compare/v1.2.0...v1.2.1) (2025-06-04)
 
 
