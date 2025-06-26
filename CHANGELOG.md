@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3](https://github.com/NethermindEth/github-workflows/compare/v1.3.2...v1.3.3) (2025-06-26)
+
+
+### Bug Fixes
+
+* set correct attestation subject name ([cffecb3](https://github.com/NethermindEth/github-workflows/commit/cffecb317be4f9172b7ffd431724656aa224a4bc))
+
 ## [1.3.2](https://github.com/NethermindEth/github-workflows/compare/v1.3.1...v1.3.2) (2025-06-10)
 
 
