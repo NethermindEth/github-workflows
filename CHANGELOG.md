@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/NethermindEth/github-workflows/compare/v1.3.3...v1.3.4) (2025-06-26)
+
+
+### Bug Fixes
+
+* typo in attestation code ([f53acdf](https://github.com/NethermindEth/github-workflows/commit/f53acdf8822fab3f482cde0d76a455766ba754ce))
+
 ## [1.3.3](https://github.com/NethermindEth/github-workflows/compare/v1.3.2...v1.3.3) (2025-06-26)
 
 
