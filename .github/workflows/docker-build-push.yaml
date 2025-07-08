@@ -114,9 +114,6 @@ jobs:
         id: checkout-code-sha
         run: |
           echo "Current branch/ref/sha/commit" ${GITHUB_REF}
-          set
-          echo "Listing checked out code"
-          ls -laR .
           SHA_SHORT=$(git log -1 --format=%h)
           echo "SHA_SHORT=$SHA_SHORT"
           echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
