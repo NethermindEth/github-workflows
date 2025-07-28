@@ -127,7 +127,7 @@ jobs:
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@1320d70a49f31585e4928e241c8650a16cf5cc7b
+        uses: NethermindEth/github-action-image-build-and-push@3a195f52101d5692956a939fe819eb1b8f67c05b
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
