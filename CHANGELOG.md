@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/NethermindEth/github-workflows/compare/v1.3.4...v1.4.0) (2025-07-28)
+
+
+### Features
+
+* add customizable runner input ([29d290e](https://github.com/NethermindEth/github-workflows/commit/29d290ee7bd5b9abec14a3fbf58d59278ece97f1))
+
+
+### Bug Fixes
+
+* Update versions ([3c8f5b9](https://github.com/NethermindEth/github-workflows/commit/3c8f5b9ffe4a2a5260f75ac276a6e12a423d57cc))
+
 ## [1.3.4](https://github.com/NethermindEth/github-workflows/compare/v1.3.3...v1.3.4) (2025-06-26)
 
 
