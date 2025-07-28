@@ -130,7 +130,7 @@ jobs:
       - name: Run Trivy vulnerability scanner in IaC mode
         id: trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37
+        uses: aquasecurity/trivy-action@dc5a429b52fcf669ce959baa2c2dd26090d2a6c4
         with:
           scan-type: "config"
           scan-ref: "${{ inputs.CHART_PATH }}${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}.tgz"
