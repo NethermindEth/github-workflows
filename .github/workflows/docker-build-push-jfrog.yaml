@@ -109,7 +109,7 @@ jobs:
           fi
 
           # Set image name
-          echo "IMAGE_NAME=${{ inputs.jfrog_url }}/${REPO_NAME}/${{ inputs.image_name }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME=${REPO_NAME}/${{ inputs.image_name }}" >> $GITHUB_OUTPUT
 
       - name: Install JFrog CLI
         id: jfrog
@@ -127,7 +127,7 @@ jobs:
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@3a195f52101d5692956a939fe819eb1b8f67c05b
+        uses: NethermindEth/github-action-image-build-and-push@e02fd9ad783079a2ff657fd9f72da9ed7951dfaf
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
