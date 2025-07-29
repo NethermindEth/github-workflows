@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/NethermindEth/github-workflows/compare/v1.4.0...v1.4.1) (2025-07-29)
+
+
+### Bug Fixes
+
+* update versions and remove jfrog url from image name ([cb6ab7b](https://github.com/NethermindEth/github-workflows/commit/cb6ab7b307e39ebed5b73571859e3088a316d402))
+
 ## [1.4.0](https://github.com/NethermindEth/github-workflows/compare/v1.3.4...v1.4.0) (2025-07-28)
 
 
