@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/NethermindEth/github-workflows/compare/v1.4.1...v1.4.2) (2025-07-30)
+
+
+### Bug Fixes
+
+* Update version to create more tags by default ([4b9db1e](https://github.com/NethermindEth/github-workflows/commit/4b9db1e94c261180090bd2e8970850492220a02a))
+
 ## [1.4.1](https://github.com/NethermindEth/github-workflows/compare/v1.4.0...v1.4.1) (2025-07-29)
 
 
