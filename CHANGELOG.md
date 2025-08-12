@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.3](https://github.com/NethermindEth/github-workflows/compare/v1.4.2...v1.4.3) (2025-08-12)
+
+
+### Bug Fixes
+
+* Enable recursive submodule checkout ([c8c2b07](https://github.com/NethermindEth/github-workflows/commit/c8c2b07234ec048c7891f593024d60bef2883154))
+* Update pull request trigger configuration in build-push-dockerhub-simple.yml ([dba621a](https://github.com/NethermindEth/github-workflows/commit/dba621a224215bd674870ca8da2c6b725b984f75))
+
 ## [1.4.2](https://github.com/NethermindEth/github-workflows/compare/v1.4.1...v1.4.2) (2025-07-30)
 
 
