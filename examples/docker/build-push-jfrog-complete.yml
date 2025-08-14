@@ -30,6 +30,13 @@ jobs:
       # Use this if you want something custom, for example a semver.
       additional_tags: ""
 
+      pre_build_script: |
+        # Clean up some space
+        sudo rm -rf \
+            /usr/share/dotnet
+            /usr/local/share/powershell
+            /usr/lib/jvm || true
+
       platforms: "linux/amd64,linux/arm64"
       context: "."
       setup-qemu: false

@@ -21,6 +21,11 @@ on:
         type: string
         default: "."
         required: false
+      pre_build_script:
+        description: "Script to run before the build"
+        type: string
+        required: false
+        default: ""
       platforms:
         description: "Platforms to build for (comma-separated)"
         type: string
@@ -94,6 +99,11 @@ jobs:
         with:
           username: ${{ secrets.dockerhub_username }}
           password: ${{ secrets.dockerhub_password }}
+
+      - name: Run pre-build script
+        if: ${{ inputs.pre_build_script != '' }}
+        run: |
+          ${{ inputs.pre_build_script }}
 
       - name: Build and push
         uses: NethermindEth/github-action-image-build-and-push@e3ecb012b16d8dca886552e164ff7a37e376b74c
