@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/NethermindEth/github-workflows/compare/v1.4.3...v1.5.0) (2025-08-14)
+
+
+### Features
+
+* Add pre-build script support to Docker workflows ([b06cb5b](https://github.com/NethermindEth/github-workflows/commit/b06cb5bc20ca9d9fa5ac63fcb2e199370efb32f4))
+
 ## [1.4.3](https://github.com/NethermindEth/github-workflows/compare/v1.4.2...v1.4.3) (2025-08-12)
 
 
