@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/NethermindEth/github-workflows/compare/v1.5.0...v1.5.1) (2025-08-15)
+
+
+### Bug Fixes
+
+* be able to select runner for dockerhub as well ([62b3174](https://github.com/NethermindEth/github-workflows/commit/62b3174ed51b7335fce83882380d53f309bea9e7))
+
 ## [1.5.0](https://github.com/NethermindEth/github-workflows/compare/v1.4.3...v1.5.0) (2025-08-14)
 
 
