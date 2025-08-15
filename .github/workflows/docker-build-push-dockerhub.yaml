@@ -1,6 +1,11 @@
 on:
   workflow_call:
     inputs:
+      runner:
+        description: "Runner to use"
+        type: string
+        required: false
+        default: "ubuntu-latest"
       repo_name:
         description: "Name of the repository to publish to"
         type: string
@@ -87,7 +92,7 @@ permissions:
 jobs:
   publish:
     name: Build and publish Docker image
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

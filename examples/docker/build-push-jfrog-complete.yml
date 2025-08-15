@@ -25,6 +25,7 @@ jobs:
       repo_name: "" # example kyoto-oci-local-staging
 
       image_name: "<repository-name>" # Example: 'my_awesome_backend'
+      runner: "ubuntu-latest"
 
       # By default latest and the git sha are added
       # Use this if you want something custom, for example a semver.

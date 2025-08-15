@@ -18,6 +18,7 @@ jobs:
       # in dockerhub.  If you want to push to a different repo, you can
       # set this value.
       repo_name: "nethermindeth"
+      runner: "ubuntu-latest"
 
       # By default it uses the repository name as the image name
       image_name: "<repository-name>"
