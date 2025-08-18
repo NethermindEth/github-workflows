@@ -12,7 +12,7 @@ jobs:
       TF_TOKEN_nethermind_jfrog_io: ${{ secrets.artifactory_access_token }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
