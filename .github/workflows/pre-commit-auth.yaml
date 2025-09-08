@@ -18,7 +18,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Install Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
 
       - name: Install terraform-docs
         uses: jaxxstorm/action-install-gh-release@v2.1.0
