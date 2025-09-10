@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/NethermindEth/github-workflows/compare/v1.5.1...v1.6.0) (2025-09-10)
+
+
+### Features
+
+* add source_tag input for Docker promotion workflow ([56464b4](https://github.com/NethermindEth/github-workflows/commit/56464b4989ef36f20a13d8db03fd3d1020a36c4a))
+
 ## [1.5.1](https://github.com/NethermindEth/github-workflows/compare/v1.5.0...v1.5.1) (2025-08-15)
 
 
