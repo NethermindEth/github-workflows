@@ -46,6 +46,11 @@ on:
         type: string
         default: "linux/amd64,linux/arm64"
         required: false
+      fetch-depth:
+        description: "Fetch depth"
+        type: number
+        required: false
+        default: 1
       setup-qemu:
         description: "Set up QEMU"
         type: boolean
@@ -101,6 +106,7 @@ jobs:
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
         with:
           submodules: recursive
+          fetch-depth: ${{ inputs.fetch-depth }}
 
       - name: Set env vars
         id: env-vars
