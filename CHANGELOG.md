@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/NethermindEth/github-workflows/compare/v1.6.0...v1.7.0) (2025-09-10)
+
+
+### Features
+
+* add fetch-depth input for Docker workflows ([e10d7ee](https://github.com/NethermindEth/github-workflows/commit/e10d7ee9e1b2a395d8912efe509c46d8a2a8c283))
+
 ## [1.6.0](https://github.com/NethermindEth/github-workflows/compare/v1.5.1...v1.6.0) (2025-09-10)
 
 
