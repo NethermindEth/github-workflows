@@ -36,7 +36,7 @@ on:
         required: true
       skip_attest:
         description: "Skip attest"
-        type: boolean
+        type: string
         required: false
         default: false
 
