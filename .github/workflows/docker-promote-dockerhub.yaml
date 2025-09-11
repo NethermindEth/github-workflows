@@ -16,6 +16,11 @@ on:
         type: string
         required: false
         default: "${{ github.event.repository.name }}"
+      source_tag:
+        description: "Source tag to promote from."
+        type: string
+        required: false
+        default: "none"
       tags:
         description: "Tags to promote (comma-separated)"
         type: string
@@ -58,7 +63,11 @@ jobs:
           # Promote all specified tags
           IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
           for TAG in "${TAGS[@]}"; do
-            source_image="${SOURCE_IMAGE}:${TAG}"
+            if [[ "${{ inputs.source_tag }}" != "none" ]]; then
+              source_image="${SOURCE_IMAGE}:${{ inputs.source_tag }}"
+            else
+              source_image="${SOURCE_IMAGE}:${TAG}"
+            fi
             target_image="${TARGET_IMAGE}:${TAG}"
             echo "Promoting ${source_image} to ${target_image}"
 
