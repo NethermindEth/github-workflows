@@ -42,8 +42,8 @@ jobs:
     steps:
       - name: Validade input
         run: |
-          if [[ ! "${{ inputs.target_env }}" =~ ^(staging|prod)$ ]]; then
-            echo "Invalid environment. Choose 'staging' or 'prod'"
+          if [[ ! "${{ inputs.target_env }}" =~ ^(dev|staging|prod)$ ]]; then
+            echo "Invalid environment. Choose 'dev', 'staging' or 'prod'"
             exit 1
           fi
 
