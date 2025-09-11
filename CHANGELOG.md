@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/NethermindEth/github-workflows/compare/v1.8.0...v1.9.0) (2025-09-11)
+
+
+### Features
+
+* add skip_attest input to docker promotion workflow ([2b76c67](https://github.com/NethermindEth/github-workflows/commit/2b76c6704a8d58ebc00dc5bd8299493366295f74))
+
+
+### Bug Fixes
+
+* change skip_attest input type to string in docker promotion workflow ([d65d060](https://github.com/NethermindEth/github-workflows/commit/d65d0604d21e6f8e778ed260b6eb89d42b76d5d0))
+
 ## [1.8.0](https://github.com/NethermindEth/github-workflows/compare/v1.7.0...v1.8.0) (2025-09-11)
 
 
