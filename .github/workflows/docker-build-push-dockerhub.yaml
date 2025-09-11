@@ -81,6 +81,11 @@ on:
         required: false
         type: boolean
         default: false
+      run_trivy:
+        description: "Run Trivy scan"
+        required: false
+        type: boolean
+        default: true
     secrets:
       dockerhub_username:
         description: "Docker Hub username"
@@ -117,7 +122,7 @@ jobs:
           ${{ inputs.pre_build_script }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@e3ecb012b16d8dca886552e164ff7a37e376b74c
+        uses: NethermindEth/github-action-image-build-and-push@c09815194e1cbb2ad2bb5eca25aaa50bcc53e2f7
         with:
           registry: "dockerhub"
           image_name: ${{ inputs.repo_name }}/${{ inputs.image_name }}
@@ -133,3 +138,4 @@ jobs:
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
           ignore_trivy: ${{ inputs.ignore_trivy }}
+          run_trivy: ${{ inputs.run_trivy }}
