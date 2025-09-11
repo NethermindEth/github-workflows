@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/NethermindEth/github-workflows/compare/v1.7.0...v1.8.0) (2025-09-11)
+
+
+### Features
+
+* add run_trivy input for Docker workflows ([886662a](https://github.com/NethermindEth/github-workflows/commit/886662ae4c08eff3bc9061081c9afaa8c56797c1))
+* enhance docker promotion workflow with source_tag input ([f26eeac](https://github.com/NethermindEth/github-workflows/commit/f26eeac7fc1a0703de57a5ea8f8f1b01f1c260f4))
+
+
+### Bug Fixes
+
+* update valid environments in docker promotion workflow ([6f29a37](https://github.com/NethermindEth/github-workflows/commit/6f29a3783be9e520bfa7da224752a15f9de94660))
+
 ## [1.7.0](https://github.com/NethermindEth/github-workflows/compare/v1.6.0...v1.7.0) (2025-09-10)
 
 
