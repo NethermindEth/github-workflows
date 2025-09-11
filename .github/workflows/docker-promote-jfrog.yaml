@@ -34,6 +34,11 @@ on:
         description: "Tags to promote (comma-separated)"
         type: string
         required: true
+      skip_attest:
+        description: "Skip attest"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   promote:
@@ -110,6 +115,7 @@ jobs:
           done
 
       - name: Attest
+        if: ${{ inputs.skip_attest != 'true' }}
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
         id: attest
         with:
