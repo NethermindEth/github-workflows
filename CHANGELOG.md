@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.1](https://github.com/NethermindEth/github-workflows/compare/v1.9.0...v1.9.1) (2025-10-03)
+
+
+### Bug Fixes
+
+* remove tag name from image name ([afe37d8](https://github.com/NethermindEth/github-workflows/commit/afe37d8346565ca856c0061fcf28449203774b5a))
+* Send fully qualified name for each digest ([c6b1bb8](https://github.com/NethermindEth/github-workflows/commit/c6b1bb8e40a3a1d62e585348ab05c8516bef9be7))
+
 ## [1.9.0](https://github.com/NethermindEth/github-workflows/compare/v1.8.0...v1.9.0) (2025-09-11)
 
 
