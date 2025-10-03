@@ -75,7 +75,7 @@ jobs:
 
             # Get image digest and add it to the subject.checksums.txt file
             DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
-            echo "${DIGEST}  ${target_image}" >> subject.checksums.txt
+            echo "${DIGEST}  ${TARGET_IMAGE}" >> subject.checksums.txt
           done
 
       - name: Attest
