@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/NethermindEth/github-workflows/compare/v1.9.1...v1.9.2) (2025-10-06)
+
+
+### Bug Fixes
+
+* bump docker/login-action from 3.5.0 to 3.6.0 ([#93](https://github.com/NethermindEth/github-workflows/issues/93)) ([4496e14](https://github.com/NethermindEth/github-workflows/commit/4496e14795c4a55e25be6bcd9c8b0d3e6ba4101c))
+
 ## [1.9.1](https://github.com/NethermindEth/github-workflows/compare/v1.9.0...v1.9.1) (2025-10-03)
 
 
