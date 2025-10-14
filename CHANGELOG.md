@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/NethermindEth/github-workflows/compare/v1.9.2...v1.10.0) (2025-10-14)
+
+
+### Features
+
+* print trivy output as part of the build job ([b5f167a](https://github.com/NethermindEth/github-workflows/commit/b5f167a426b3cb18ad9322ae2c829edc24d4e424))
+
 ## [1.9.2](https://github.com/NethermindEth/github-workflows/compare/v1.9.1...v1.9.2) (2025-10-06)
 
 
