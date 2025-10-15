@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/NethermindEth/github-workflows/compare/v1.10.0...v1.10.1) (2025-10-15)
+
+
+### Bug Fixes
+
+* add configuration to specify how to checkout the submodules ([d63c500](https://github.com/NethermindEth/github-workflows/commit/d63c5000a2f8092fe83f531b089e12da8f599d40))
+
 ## [1.10.0](https://github.com/NethermindEth/github-workflows/compare/v1.9.2...v1.10.0) (2025-10-14)
 
 
