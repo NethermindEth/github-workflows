@@ -35,6 +35,7 @@ jobs:
             /usr/lib/jvm || true
 
       platforms: "linux/amd64,linux/arm64"
+      checkout_submodules: "recursive"
       context: "."
       setup-qemu: false
       dockerfile_path: "Dockerfile"

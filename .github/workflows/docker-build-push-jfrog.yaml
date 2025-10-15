@@ -6,6 +6,11 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
+      checkout_submodules:
+        description: "Check out submodules type.  Defaults to recursive"
+        type: string
+        required: false
+        default: "recursive"
       repo_name:
         description: "Name of the repository to publish to"
         type: string
@@ -110,7 +115,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
         with:
-          submodules: recursive
+          submodules: ${{ inputs.checkout_submodules }}
           fetch-depth: ${{ inputs.fetch-depth }}
 
       - name: Set env vars
