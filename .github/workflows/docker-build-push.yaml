@@ -45,16 +45,6 @@ on:
         type: string
         default: ""
         required: false
-      skip_trivy:
-        description: "Skip trivy scan. Use at your own risk"
-        type: boolean
-        default: false
-        required: false
-      trivyignores:
-        description: "Comma-separated list of relative paths in repository to one or more .trivyignore files"
-        type: string
-        default: ""
-        required: false
       use_cache:
         description: "Use cache for build"
         type: boolean
@@ -65,6 +55,16 @@ on:
         type: boolean
         default: false
         required: false
+      repository:
+        description: "Repository to checkout"
+        type: string
+        default: ${{ github.repository }}
+        required: false
+      ref:
+        description: "Reference - branch, tag or SHA to checkout"
+        type: string
+        default: ${{ github.ref }}
+        required: false
 
     secrets:
       artifactory_access_token:
@@ -73,6 +73,9 @@ on:
       artifactory_username:
         description: "Username for Artifactory authentication"
         required: true
+      checkout_token:
+        description: "token used for checkout"
+        required: false
 
 permissions:
   id-token: write
@@ -84,8 +87,23 @@ jobs:
     name: Docker Build, Scan, Attest and Push
     runs-on: ubuntu-latest
     steps:
+      - name: Validate checkout token
+        if: ${{ inputs.repository != github.repository }}
+        run: |
+          if [ -z "${{ secrets.checkout_token }}" ]; then
+            echo "Error: checkout_token secret is required when checking out a different repository"
+            echo "Repository requested: ${{ inputs.repository }}"
+            echo "Current repository: ${{ github.repository }}"
+            exit 1
+          fi
+
       - name: Checkout code
+        id: checkout
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          token: ${{ inputs.repository != github.repository && secrets.checkout_token || secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
         if: ${{ inputs.setup-qemu }}
@@ -113,6 +131,12 @@ jobs:
             type=sha
             ${{ inputs.additional_tags != '' && format('type=raw,value={0}', inputs.additional_tags) || '' }}
 
+      - name: Generate version string
+        id: version
+        run: |
+          TAG_NAME=$(git describe --exact-match --tags HEAD 2>/dev/null) && VERSION="${TAG_NAME}-$(git rev-parse --short HEAD)" || VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Docker Build
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -123,27 +147,12 @@ jobs:
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ inputs.platforms }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
           outputs: |
             type=image,push=false
             type=docker
           tags: latest
-
-      - name: Run Trivy vulnerability scanner
-        id: trivy
-        if: ${{ !inputs.skip_trivy }}
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-        with:
-          image-ref: ${{ steps.build.outputs.imageid }}
-          format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          output: "trivy-results.txt"
-          trivyignores: ${{ inputs.trivyignores }}
-        env:
-          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
-          TRIVY_DISABLE_VEX_NOTICE: true
 
       - name: Docker Push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -177,17 +186,3 @@ jobs:
             echo "- $TAG" >> $GITHUB_STEP_SUMMARY
           done
           echo '```' >> $GITHUB_STEP_SUMMARY
-
-          echo "### Trivy Scan Output" >> $GITHUB_STEP_SUMMARY
-          if [[ -f trivy-results.txt ]]; then
-            echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            while IFS= read -r line; do
-              if [[ $line == "┌"* ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
-              echo "$line" >> $GITHUB_STEP_SUMMARY
-              if [[ $line == *"┘" ]]; then echo '```' >> $GITHUB_STEP_SUMMARY; fi
-            done < trivy-results.txt
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No Trivy report found." >> $GITHUB_STEP_SUMMARY
-          fi
