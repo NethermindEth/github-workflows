@@ -89,8 +89,10 @@ jobs:
     steps:
       - name: Validate checkout token
         if: ${{ inputs.repository != github.repository }}
+        env:
+          CHECKOUT_TOKEN: ${{ secrets.checkout_token }}
         run: |
-          if [ -z "${{ secrets.checkout_token }}" ]; then
+          if [ -z "$CHECKOUT_TOKEN" ]; then
             echo "Error: checkout_token secret is required when checking out a different repository"
             echo "Repository requested: ${{ inputs.repository }}"
             echo "Current repository: ${{ github.repository }}"
