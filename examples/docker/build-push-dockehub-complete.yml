@@ -14,6 +14,12 @@ jobs:
   build_complete:
     uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-dockerhub.yaml@main
     with:
+      # Configure git repo
+      git_repository: "${{ github.repository }}"
+      git_ref: ""
+      git_token: ${{ github.token }}
+      checkout_submodules: "recursive"
+
       # By default it pushes it to nethermindeth, which is a test repo
       # in dockerhub.  If you want to push to a different repo, you can
       # set this value.
@@ -35,7 +41,6 @@ jobs:
             /usr/lib/jvm || true
 
       platforms: "linux/amd64,linux/arm64"
-      checkout_submodules: "recursive"
       context: "."
       setup-qemu: false
       dockerfile_path: "Dockerfile"

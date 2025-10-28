@@ -15,6 +15,12 @@ jobs:
   build_complete:
     uses: NethermindEth/github-workflows/.github/workflows/docker-build-push-jfrog.yaml@main
     with:
+      # Configure git repo
+      git_repository: "${{ github.repository }}"
+      git_ref: ""
+      git_token: ${{ github.token }}
+      checkout_submodules: "recursive"
+
       # To decide the name of the repo, you can use the repo_name
       # input or the group_name input
       # The easiest and recommended one is to use the group_name
@@ -39,7 +45,6 @@ jobs:
             /usr/lib/jvm || true
 
       platforms: "linux/amd64,linux/arm64"
-      checkout_submodules: "recursive"
       context: "."
       setup-qemu: false
       dockerfile_path: "Dockerfile"

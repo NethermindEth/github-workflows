@@ -6,6 +6,16 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
+      git_repository:
+        description: "Name of the git repository to checkout and build from"
+        type: string
+        required: false
+        default: ${{ github.repository }}
+      git_ref:
+        description: "Git reference to checkout"
+        type: string
+        required: false
+        default: ''
       checkout_submodules:
         description: "Check out submodules type.  Defaults to recursive"
         type: string
@@ -98,6 +108,9 @@ on:
       dockerhub_password:
         description: "Docker Hub password"
         required: true
+      git_token:
+        description: "Git token to use for checkout"
+        required: false
 
 permissions:
   id-token: write
@@ -112,6 +125,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
         with:
+          repository: ${{ inputs.git_repository }}
+          token: ${{ secrets.git_token || inputs.git_token }}
+          ref: ${{ inputs.git_ref }}
           submodules: ${{ inputs.checkout_submodules }}
           fetch-depth: ${{ inputs.fetch-depth }}
 
