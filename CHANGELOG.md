@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.0](https://github.com/NethermindEth/github-workflows/compare/v1.10.1...v1.11.0) (2025-11-05)
+
+
+### Features
+
+* add git repository configuration to Docker workflows ([27ca4ed](https://github.com/NethermindEth/github-workflows/commit/27ca4ed4f6e464545aea0a084494529f1176637b))
+
+
+### Bug Fixes
+
+* update token retrieval in Docker workflows ([560135a](https://github.com/NethermindEth/github-workflows/commit/560135a7503eddb1c418bb3a4178c46788369b4f))
+
 ## [1.10.1](https://github.com/NethermindEth/github-workflows/compare/v1.10.0...v1.10.1) (2025-10-15)
 
 
