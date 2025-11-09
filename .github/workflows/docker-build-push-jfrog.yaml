@@ -6,6 +6,11 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
+      target_env:
+        description: "Target environment repo (dev|staging|prod). Default: dev"
+        type: string
+        required: false
+        default: "dev"
       repo_name:
         description: "Name of the repository to publish to"
         type: string
@@ -120,7 +125,7 @@ jobs:
           if [[ -n "${{ inputs.repo_name }}" ]]; then
             export REPO_NAME="${{ inputs.repo_name }}"
           elif [[ -n "${{ inputs.group_name }}" ]]; then
-            export REPO_NAME="${{ inputs.group_name }}-oci-local-dev"
+            export REPO_NAME="${{ inputs.group_name }}-oci-local-${{ inputs.target_env }}"
           else
             echo "Unable to determine the repo name.  Please set either group_name or the repo_name."
             exit 1

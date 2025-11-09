@@ -1,81 +1,44 @@
+name: Docker Promote (Same Repo via OIDC)
+
 on:
   workflow_call:
     inputs:
       jfrog_url:
-        description: "URL of Artifactory server"
+        description: "JFrog base URL (e.g. nethermind.jfrog.io)"
+        required: true
         type: string
-        default: "nethermind.jfrog.io"
-        required: false
+      repo_name:
+        description: "JFrog repo name (e.g. pmo-oci-local-staging)"
+        required: true
+        type: string
       image_name:
-        description: "Name of the image to publish.  Defaults to the repository name."
-        type: string
-        required: false
-        default: "${{ github.event.repository.name }}"
-      group_name:
-        description: "Name of the group in Nethermind.  Example: nubia, kyoto, etc"
-        type: string
-        required: false
-        default: ""
-      target_env:
-        description: "Target environment to promote to (either staging or prod)"
-        type: string
+        description: "Image name (e.g. yokai-dash-api-backend)"
         required: true
-      source_env:
-        description: "Source environment to promote from (either dev or staging)"
         type: string
-        required: false
-        default: "none"
       source_tag:
-        description: "Source tag to promote from."
-        type: string
-        required: false
-        default: "none"
-      tags:
-        description: "Tags to promote (comma-separated)"
-        type: string
+        description: "Source tag to copy from"
         required: true
-      skip_attest:
-        description: "Skip attest"
-        type: boolean
-        required: false
-        default: false
+        type: string
+      tags:
+        description: "Comma-separated list of tags to promote to"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   promote:
-    name: Promote Docker image
+    name: Promote (Same Repo)
     runs-on: ubuntu-latest
+
     steps:
-      - name: Validade input
-        run: |
-          if [[ ! "${{ inputs.target_env }}" =~ ^(dev|staging|prod)$ ]]; then
-            echo "Invalid environment. Choose 'dev', 'staging' or 'prod'"
-            exit 1
-          fi
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          if [[ ! "${{ inputs.source_env }}" =~ ^(dev|staging|none)$ ]]; then
-            echo "Invalid environment. Choose 'dev', 'staging' or don't set it"
-            exit 1
-          fi
-
-      - name: Set environment variables
-        run: |
-          if [[ "${{ inputs.source_env }}" == "none" ]]; then
-            SOURCE_ENV=$([[ "${{ inputs.target_env }}" == "staging" ]] && echo "dev" || echo "staging")
-            echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
-          else
-            SOURCE_ENV="${{ inputs.source_env }}"
-            echo "SOURCE_ENV=${SOURCE_ENV}" >> $GITHUB_ENV
-          fi
-
-          SOURCE_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${SOURCE_ENV}/${{ inputs.image_name }}"
-          TARGET_IMAGE="${{ inputs.jfrog_url }}/${{ inputs.group_name }}-oci-local-${{ inputs.target_env }}/${{ inputs.image_name }}"
-          echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
-          echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
-
-      - name: Install JFrog CLI
+      # 🔐 Use OIDC to get a JFrog token dynamically
+      - name: Install JFrog CLI (for OIDC token)
         id: jfrog
         uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -83,50 +46,33 @@ jobs:
         with:
           oidc-provider-name: github-nethermindeth
 
-      - name: Login to Registry with OIDC
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+      - name: Login to JFrog OCI Registry via OIDC
+        uses: docker/login-action@v3
         with:
           registry: ${{ inputs.jfrog_url }}
           username: ${{ steps.jfrog.outputs.oidc-user }}
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
-      - name: Setup oras cli
-        uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1.2.3
+      - name: Setup ORAS CLI
+        uses: oras-project/setup-oras@v1
 
-      - name: Promote Images
-        id: promote
+      - name: Promote Tags (in same repo)
         run: |
-          # Promote all specified tags
+          SRC="${{ inputs.jfrog_url }}/${{ inputs.repo_name }}/${{ inputs.image_name }}:${{ inputs.source_tag }}"
           IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
+
+          echo "🚀 Promoting from: $SRC"
           for TAG in "${TAGS[@]}"; do
-            if [[ "${{ inputs.source_tag }}" != "none" ]]; then
-              source_image="${SOURCE_IMAGE}:${{ inputs.source_tag }}"
-            else
-              source_image="${SOURCE_IMAGE}:${TAG}"
-            fi
-            target_image="${TARGET_IMAGE}:${TAG}"
-            echo "Promoting ${source_image} to ${target_image}"
-
-            oras cp -r ${source_image} ${target_image}
-
-            # Get image digest and add it to the subject.checksums.txt file
-            DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
-            echo "${DIGEST}  ${TAG}" >> subject.checksums.txt
+            DST="${{ inputs.jfrog_url }}/${{ inputs.repo_name }}/${{ inputs.image_name }}:${TAG}"
+            echo "➡️  Copying $SRC → $DST"
+            oras cp -r "$SRC" "$DST"
           done
 
-      - name: Attest
-        if: ${{ inputs.skip_attest != 'true' }}
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
-        id: attest
-        with:
-          subject-name: ${{ env.TARGET_IMAGE }}
-          subject-checksums: subject.checksums.txt
-          push-to-registry: true
-
-      - name: Record Promotion
+      - name: Record Promotion Summary
         run: |
-          echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "- From: $SOURCE_IMAGE" >> $GITHUB_STEP_SUMMARY
-          echo "- To: $TARGET_IMAGE" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧩 Image Promotion Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- JFrog Repo: ${{ inputs.repo_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ inputs.image_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Source Tag: ${{ inputs.source_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Promoted Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
