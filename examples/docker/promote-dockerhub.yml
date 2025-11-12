@@ -26,5 +26,5 @@ jobs:
       image_name: "juno"
       tags: ${{ inputs.tags }}
     secrets:
-      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
-      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
+      dockerhub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_HUB_PASSWORD }}

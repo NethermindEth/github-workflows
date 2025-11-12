@@ -20,5 +20,5 @@ jobs:
       image_name: "juno"
       push: ${{ github.event_name != 'pull_request' }}
     secrets:
-      dockerhub_username: ${{ secrets.DOCKER_USERNAME }}
-      dockerhub_password: ${{ secrets.DOCKER_PASSWORD }}
+      dockerhub_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKER_HUB_PASSWORD }}
