@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/NethermindEth/github-workflows/compare/v1.11.0...v1.11.1) (2025-11-12)
+
+
+### Bug Fixes
+
+* update Docker Hub credentials in workflows ([f6a84c2](https://github.com/NethermindEth/github-workflows/commit/f6a84c277c3f44eeba82cda2ba7a6393537d26c1))
+
 ## [1.11.0](https://github.com/NethermindEth/github-workflows/compare/v1.10.1...v1.11.0) (2025-11-05)
 
 
