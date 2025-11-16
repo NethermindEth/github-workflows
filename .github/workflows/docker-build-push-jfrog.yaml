@@ -6,10 +6,12 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
+      # Added to allow rebuild old yo9kai images
       git_ref:
         description: "Commit SHA or tag to check out before building"
         required: false
         type: string
+      # Added to allow rebuild old yo9kai images
       repo_name:
         description: "Name of the repository to publish to"
         type: string
