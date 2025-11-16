@@ -165,7 +165,7 @@ jobs:
           ${{ inputs.pre_build_script }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@c09815194e1cbb2ad2bb5eca25aaa50bcc53e2f7
+        uses: NethermindEth/github-action-image-build-and-push@0a6ee671698e78d77c06db8b45a3f74967c19bc2
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
