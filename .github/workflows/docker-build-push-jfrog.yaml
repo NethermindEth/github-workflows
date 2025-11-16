@@ -11,6 +11,11 @@ on:
         description: "Commit SHA or tag to check out before building"
         required: false
         type: string
+      build_commit:
+        description: "Commit SHA used for image metadata"
+        type: string
+        required: false
+        default: ""
       # Added to allow rebuild old yokai images
       repo_name:
         description: "Name of the repository to publish to"
@@ -182,3 +187,4 @@ jobs:
           build-args: ${{ inputs.docker_build_args }}
           ignore_trivy: ${{ inputs.ignore_trivy }}
           run_trivy: ${{ inputs.run_trivy }}
+          build_commit: ${{ inputs.git_ref }}
