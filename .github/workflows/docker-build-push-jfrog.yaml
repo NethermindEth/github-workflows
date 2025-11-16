@@ -6,12 +6,12 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
-      # Added to allow rebuild old yo9kai images
+      # Added to allow rebuild old yokai images
       git_ref:
         description: "Commit SHA or tag to check out before building"
         required: false
         type: string
-      # Added to allow rebuild old yo9kai images
+      # Added to allow rebuild old yokai images
       repo_name:
         description: "Name of the repository to publish to"
         type: string
@@ -118,8 +118,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: ${{ inputs.fetch-depth }}
-          ref: "${{ inputs.git_ref && inputs.git_ref != '' && inputs.git_ref || github.sha }}"
-
+          ref: ${{ inputs.git_ref || github.sha }}
 
       - name: Set env vars
         id: env-vars
