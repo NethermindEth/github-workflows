@@ -113,6 +113,14 @@ jobs:
     name: Build and publish Docker image
     runs-on: ${{ inputs.runner }}
     steps:
+
+      - name: Validate git_ref
+        run: |
+          if [ -z "${{ inputs.git_ref }}" ]; then
+            echo "❌ ERROR: git_ref is required. Caller did not provide it."
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.1.1
         with:
