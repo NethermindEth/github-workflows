@@ -19,10 +19,6 @@ on:
         description: "Version of Terraform module"
         type: string
         required: true
-    secrets:
-      artifactory_access_token:
-        description: "A token used to communicate with Artifactory"
-        required: true
 
 jobs:
   publish:
@@ -32,18 +28,12 @@ jobs:
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v4.2.2
 
       - name: Set up JFrog CLI
-        uses: jfrog/setup-jfrog-cli@6359487fb3e3de9d8ce7c1c8bbe8ed298a55d061 # v4.5.9
-
-      - name: Configure JFrog CLI
-        shell: bash
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@5b06f730cc5a6f55d78b30753f8583454b08c0aa # v4.8.1
         env:
-          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.artifactory_access_token }}
-          JFROG_URL: ${{ inputs.jfrog_url }}
-        run: |
-          echo "${ARTIFACTORY_ACCESS_TOKEN}" | jf config add nethermind \
-            --url="${JFROG_URL}" \
-            --interactive=false \
-            --access-token-stdin
+          JF_URL: ${{ inputs.jfrog_url }}
+        with:
+          oidc-provider-name: github-nethermindeth
 
       - name: Configure Terraform registry
         shell: bash

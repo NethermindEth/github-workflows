@@ -1,16 +1,23 @@
 on:
   workflow_call:
-    secrets:
-      artifactory_access_token:
-        description: "A token used to communicate with Artifactory"
-        required: true
+    inputs:
+      jfrog_url:
+        description: "URL of Artifactory server"
+        type: string
+        default: "https://nethermind.jfrog.io"
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
-    env:
-      TF_TOKEN_nethermind_jfrog_io: ${{ secrets.artifactory_access_token }}
     steps:
+      - name: Configure JFrog CLI
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@5b06f730cc5a6f55d78b30753f8583454b08c0aa # v4.8.1
+        env:
+          JFROG_URL: ${{ inputs.jfrog_url }}
+        with:
+          oidc-provider-name: github-nethermindeth
+
       - name: Checkout
         uses: actions/checkout@v5
 
