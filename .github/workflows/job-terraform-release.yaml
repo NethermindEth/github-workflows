@@ -5,15 +5,6 @@ on:
         description: "Name of current repository"
         required: true
         type: string
-    secrets:
-      artifactory_access_token:
-        description: "A token used to communicate with Artifactory"
-        required: true
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
 
 jobs:
   release:
@@ -36,5 +27,3 @@ jobs:
       provider_name: ${{ needs.compute_name.outputs.provider_name }}
       module_name: ${{ needs.compute_name.outputs.module_name }}
       module_version: ${{ needs.release.outputs.tag_name }}
-    secrets:
-      artifactory_access_token: ${{ secrets.artifactory_access_token }}
