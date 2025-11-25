@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.2](https://github.com/NethermindEth/github-workflows/compare/v1.11.1...v1.11.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* update jfrog setup cli steps to use oidc auth instead of artifactory token ([3b1f8d7](https://github.com/NethermindEth/github-workflows/commit/3b1f8d7a63418fd88f4f053a7c0a8be8e20376f9))
+
 ## [1.11.1](https://github.com/NethermindEth/github-workflows/compare/v1.11.0...v1.11.1) (2025-11-12)
 
 
