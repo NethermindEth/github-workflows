@@ -117,6 +117,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: ${{ inputs.fetch-depth }}
+          ref: ${{ inputs.branch }}
 
       - name: Set env vars
         id: env-vars
