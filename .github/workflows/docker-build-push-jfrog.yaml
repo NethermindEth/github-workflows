@@ -101,6 +101,11 @@ on:
         required: false
         type: boolean
         default: true
+      branch:
+        description: "Branch to clone"
+        required: true
+        type: string
+        default: ""  
 
 permissions:
   id-token: write
