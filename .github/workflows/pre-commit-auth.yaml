@@ -19,7 +19,7 @@ jobs:
           oidc-provider-name: github-nethermindeth
 
       - name: Checkout
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
