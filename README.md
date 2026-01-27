@@ -14,6 +14,13 @@ For example:
 Read about it in the [examples/docker/README.md](examples/docker/README.md) file.
 
 
+## Canton Wallet Reports
+
+Automated weekly CSV reports for Canton blockchain wallets.
+
+Read about it in the [examples/CANTON_REPORTS.md](examples/CANTON_REPORTS.md) file.
+
+
 ## License
 
 Copyright (c) 2025 Nethermind - All rights reserved

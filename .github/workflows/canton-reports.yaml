@@ -1,0 +1,84 @@
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner to use"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      output_dir:
+        description: "Directory to save CSV reports"
+        type: string
+        required: false
+        default: "reports"
+      use_mock_data:
+        description: "Use mock data instead of fetching from API"
+        type: boolean
+        required: false
+        default: false
+      days:
+        description: "Number of days of data to fetch (for mock mode)"
+        type: number
+        required: false
+        default: 7
+      validator_only:
+        description: "Generate reports only for validator wallet"
+        type: boolean
+        required: false
+        default: false
+      non_validator_only:
+        description: "Generate reports only for non-validator wallet"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  generate-canton-reports:
+    runs-on: ${{ inputs.runner }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: NethermindEth/github-workflows
+          ref: main
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Generate Canton wallet reports
+        run: |
+          mkdir -p ${{ inputs.output_dir }}
+          
+          ARGS="--output-dir ${{ inputs.output_dir }}"
+          
+          if [ "${{ inputs.use_mock_data }}" == "true" ]; then
+            ARGS="$ARGS --mock"
+          fi
+          
+          if [ "${{ inputs.validator_only }}" == "true" ]; then
+            ARGS="$ARGS --validator-only"
+          fi
+          
+          if [ "${{ inputs.non_validator_only }}" == "true" ]; then
+            ARGS="$ARGS --non-validator-only"
+          fi
+          
+          ARGS="$ARGS --days ${{ inputs.days }}"
+          
+          python3 scripts/generate_canton_reports.py $ARGS
+          
+      - name: List generated reports
+        run: |
+          echo "Generated reports:"
+          ls -lh ${{ inputs.output_dir }}
+          
+      - name: Upload reports as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: canton-wallet-reports-${{ github.run_id }}
+          path: ${{ inputs.output_dir }}/*.csv
+          retention-days: 90
+          if-no-files-found: error

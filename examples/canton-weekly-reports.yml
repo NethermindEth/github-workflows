@@ -1,0 +1,28 @@
+name: Weekly Canton Wallet Reports
+
+on:
+  # Run every Monday at 9:00 AM UTC
+  schedule:
+    - cron: '0 9 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      use_mock_data:
+        description: 'Use mock data for testing'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  generate_weekly_reports:
+    name: Generate Canton Wallet Reports
+    uses: NethermindEth/github-workflows/.github/workflows/canton-reports.yaml@main
+    with:
+      runner: ubuntu-latest
+      output_dir: canton-reports
+      use_mock_data: ${{ github.event.inputs.use_mock_data == 'true' || github.event_name == 'workflow_dispatch' }}
+      days: 7
