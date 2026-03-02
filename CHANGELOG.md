@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.4](https://github.com/NethermindEth/github-workflows/compare/v1.11.3...v1.11.4) (2026-03-02)
+
+
+### Bug Fixes
+
+* **dependabot:** include scope in commit messages ([6037327](https://github.com/NethermindEth/github-workflows/commit/603732736adf3da32a590671e9bf3fba76c3653b))
+* **trivy:** specify version for Trivy vulnerability scanner ([6261c98](https://github.com/NethermindEth/github-workflows/commit/6261c98fe585e9a475fd5086b3ede8efab7a4cc3))
+* **workflows:** update github-action-image-build-and-push version for Docker builds ([096391d](https://github.com/NethermindEth/github-workflows/commit/096391d64137cb30ec24c59462db31d7cfc11165))
+
 ## [1.11.3](https://github.com/NethermindEth/github-workflows/compare/v1.11.2...v1.11.3) (2026-03-02)
 
 
