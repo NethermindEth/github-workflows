@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.3](https://github.com/NethermindEth/github-workflows/compare/v1.11.2...v1.11.3) (2026-03-02)
+
+
+### Bug Fixes
+
+* **dependabot:** use fix prefix for commit messages ([#118](https://github.com/NethermindEth/github-workflows/issues/118)) ([5884540](https://github.com/NethermindEth/github-workflows/commit/58845405b6ab5058db6fd74a90cdacc4f315a4e2))
+
 ## [1.11.2](https://github.com/NethermindEth/github-workflows/compare/v1.11.1...v1.11.2) (2025-11-25)
 
 
