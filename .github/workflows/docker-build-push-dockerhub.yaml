@@ -143,7 +143,7 @@ jobs:
           ${{ inputs.pre_build_script }}
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@b59fa5c2f2416973d34123c7cac63965209ed492
+        uses: NethermindEth/github-action-image-build-and-push@fefef12a2baef6d339fb4b244b4cd45c40146161
         with:
           registry: "dockerhub"
           image_name: ${{ inputs.repo_name }}/${{ inputs.image_name }}
