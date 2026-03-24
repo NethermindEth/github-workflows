@@ -7,3 +7,7 @@ updates:
     commit-message:
       prefix: "fix"
       include: "scope"
+    groups:
+      all-github-actions:
+        patterns:
+          - "*"
