@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.5](https://github.com/NethermindEth/github-workflows/compare/v1.11.4...v1.11.5) (2026-03-24)
+
+
+### Bug Fixes
+
+* **deps:** bump aquasecurity/trivy-action ([b33ea8f](https://github.com/NethermindEth/github-workflows/commit/b33ea8fdc71b3eb90c2c498b9baf6603ede2f562))
+* **deps:** bump aquasecurity/trivy-action from e368e328979b113139d6f9068e03accaed98a518 to 57a97c7e7821a5776cebc9bb87c984fa69cba8f1 ([#128](https://github.com/NethermindEth/github-workflows/issues/128)) ([b33ea8f](https://github.com/NethermindEth/github-workflows/commit/b33ea8fdc71b3eb90c2c498b9baf6603ede2f562))
+* **deps:** bump azure/setup-helm from 4.3.1 to 5.0.0 ([#127](https://github.com/NethermindEth/github-workflows/issues/127)) ([46b6c1f](https://github.com/NethermindEth/github-workflows/commit/46b6c1fe67ebd7e4898e5dc7384fbb7785faa266))
+* **deps:** bump docker/login-action from 3.7.0 to 4.0.0 ([#123](https://github.com/NethermindEth/github-workflows/issues/123)) ([8fdf229](https://github.com/NethermindEth/github-workflows/commit/8fdf229c4257386c46db8dbdc9a8996f7aaf2cd0))
+* **deps:** bump marocchino/sticky-pull-request-comment from 2 to 3 ([#125](https://github.com/NethermindEth/github-workflows/issues/125)) ([5b0e3f6](https://github.com/NethermindEth/github-workflows/commit/5b0e3f6fe48d9b32e1b9ade0a8a47b718a32cfd2))
+* update composite action to remediate Trivy supply chain attack ([#126](https://github.com/NethermindEth/github-workflows/issues/126)) ([619371e](https://github.com/NethermindEth/github-workflows/commit/619371e1df0475e194aa353756c0b93aef76aa92))
+
 ## [1.11.4](https://github.com/NethermindEth/github-workflows/compare/v1.11.3...v1.11.4) (2026-03-02)
 
 
