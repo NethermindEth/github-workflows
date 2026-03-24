@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.6](https://github.com/NethermindEth/github-workflows/compare/v1.11.5...v1.11.6) (2026-03-24)
+
+
+### Bug Fixes
+
+* bump trivy version to the latest and update the comment ([#131](https://github.com/NethermindEth/github-workflows/issues/131)) ([497acc5](https://github.com/NethermindEth/github-workflows/commit/497acc523180b2b4bbd564939254e49c53258aa1))
+
 ## [1.11.5](https://github.com/NethermindEth/github-workflows/compare/v1.11.4...v1.11.5) (2026-03-24)
 
 
