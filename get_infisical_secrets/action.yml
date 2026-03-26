@@ -1,0 +1,244 @@
+name: Get Infisical Secrets
+description: Authenticate to Infisical via GitHub OIDC and export secrets as environment variables or a .env file.
+
+inputs:
+  identity-id:
+    description: Infisical machine identity ID for OIDC auth
+    required: true
+  project-id:
+    description: Infisical project ID
+    required: true
+  env-slug:
+    description: Environment slug (e.g., dev, staging, prod)
+    required: true
+  export-type:
+    description: "Export mode: 'env' sets environment variables, 'file' writes a .env file"
+    required: false
+    default: env
+  file-path:
+    description: Output file path relative to $GITHUB_WORKSPACE (only used when export-type is file)
+    required: false
+    default: .env
+  domain:
+    description: Infisical instance URL
+    required: false
+    default: https://app.infisical.com
+  secret-path:
+    description: Override the secret path (default derives from repo name as /github/workflows/<repo-name>)
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch Infisical secrets
+      shell: bash
+      env:
+        INPUT_IDENTITY_ID: ${{ inputs.identity-id }}
+        INPUT_PROJECT_ID: ${{ inputs.project-id }}
+        INPUT_ENV_SLUG: ${{ inputs.env-slug }}
+        INPUT_EXPORT_TYPE: ${{ inputs.export-type }}
+        INPUT_FILE_PATH: ${{ inputs.file-path }}
+        INPUT_DOMAIN: ${{ inputs.domain }}
+        INPUT_SECRET_PATH: ${{ inputs.secret-path }}
+      run: |
+        set -euo pipefail
+
+        # --- Check required dependencies ---
+        for cmd in curl jq openssl; do
+          if ! command -v "${cmd}" &>/dev/null; then
+            echo "::error::Required command '${cmd}' not found. Ensure it is installed on the runner."
+            exit 1
+          fi
+        done
+
+        # --- Setup temp directory with cleanup trap ---
+        TMPDIR=$(mktemp -d)
+        trap 'rm -rf "${TMPDIR}"' EXIT
+
+        # --- Validate export-type input ---
+        if [[ "${INPUT_EXPORT_TYPE}" != "env" && "${INPUT_EXPORT_TYPE}" != "file" ]]; then
+          echo "::error::Invalid export-type '${INPUT_EXPORT_TYPE}'. Must be 'env' or 'file'."
+          exit 1
+        fi
+
+        # --- Normalize domain (strip trailing slash) ---
+        DOMAIN="${INPUT_DOMAIN%/}"
+
+        # --- Validate file-path (no traversal, no absolute paths) ---
+        if [[ "${INPUT_EXPORT_TYPE}" == "file" ]]; then
+          if [[ -z "${INPUT_FILE_PATH}" ]]; then
+            echo "::error::file-path must not be empty when export-type is 'file'."
+            exit 1
+          fi
+          if [[ "${INPUT_FILE_PATH}" == /* ]]; then
+            echo "::error::file-path must be a relative path (no leading '/')."
+            exit 1
+          fi
+          IFS='/' read -r -a PATH_PARTS <<< "${INPUT_FILE_PATH}"
+          for SEGMENT in "${PATH_PARTS[@]}"; do
+            if [[ "${SEGMENT}" == ".." ]]; then
+              echo "::error::file-path must not contain '..' segments."
+              exit 1
+            fi
+          done
+        fi
+
+        # --- Derive secret path from repo name or use override ---
+        if [[ -n "${INPUT_SECRET_PATH}" ]]; then
+          SECRET_PATH="${INPUT_SECRET_PATH}"
+        else
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          SECRET_PATH="/github/workflows/${REPO_NAME}"
+        fi
+        echo "Secret path: ${SECRET_PATH}"
+
+        # --- Step 1: Get GitHub OIDC token ---
+        if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
+          echo "::error::Failed to get GitHub OIDC token. Ensure the job has 'permissions: id-token: write'."
+          exit 1
+        fi
+
+        OIDC_HTTP_CODE=$(curl -s -o "${TMPDIR}/oidc_response" -w "%{http_code}" \
+          -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}")
+
+        if [[ "${OIDC_HTTP_CODE}" -ne 200 ]]; then
+          echo "::error::Failed to get GitHub OIDC token (HTTP ${OIDC_HTTP_CODE}). Ensure the job has 'permissions: id-token: write'."
+          exit 1
+        fi
+
+        if ! OIDC_TOKEN=$(jq -er '.value' "${TMPDIR}/oidc_response" 2>/dev/null); then
+          echo "::error::Failed to parse GitHub OIDC token from response."
+          exit 1
+        fi
+
+        echo "GitHub OIDC token obtained successfully."
+
+        # --- Step 2: Authenticate with Infisical ---
+        LOGIN_HTTP_CODE=$(curl -s -o "${TMPDIR}/login_response" -w "%{http_code}" \
+          -X POST \
+          "${DOMAIN}/api/v1/auth/oidc-auth/login" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          --data-urlencode "identityId=${INPUT_IDENTITY_ID}" \
+          --data-urlencode "jwt=${OIDC_TOKEN}")
+
+        if [[ "${LOGIN_HTTP_CODE}" -ne 200 ]]; then
+          ERROR_MSG=$(jq -r '.message // "Unknown error"' "${TMPDIR}/login_response" 2>/dev/null || echo "HTTP ${LOGIN_HTTP_CODE}")
+          echo "::error::Infisical authentication failed: ${ERROR_MSG}"
+          exit 1
+        fi
+
+        if ! ACCESS_TOKEN=$(jq -er '.accessToken' "${TMPDIR}/login_response" 2>/dev/null); then
+          echo "::error::Infisical authentication failed: could not extract access token."
+          exit 1
+        fi
+
+        echo "Infisical authentication successful."
+
+        # --- Step 3: Fetch secrets ---
+        SECRETS_HTTP_CODE=$(curl -s -o "${TMPDIR}/secrets_response" -w "%{http_code}" \
+          -G \
+          "${DOMAIN}/api/v4/secrets" \
+          -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+          --data-urlencode "projectId=${INPUT_PROJECT_ID}" \
+          --data-urlencode "environment=${INPUT_ENV_SLUG}" \
+          --data-urlencode "secretPath=${SECRET_PATH}" \
+          --data-urlencode "includeImports=true" \
+          --data-urlencode "expandSecretReferences=true")
+
+        if [[ "${SECRETS_HTTP_CODE}" -ne 200 ]]; then
+          ERROR_MSG=$(jq -r '.message // "Unknown error"' "${TMPDIR}/secrets_response" 2>/dev/null || echo "HTTP ${SECRETS_HTTP_CODE}")
+          echo "::error::Failed to fetch secrets: ${ERROR_MSG}"
+          exit 1
+        fi
+
+        # --- Step 4: Parse and export secrets ---
+        # All secret processing happens with file-based I/O to avoid any stdout leakage.
+        { set +x; } 2>/dev/null
+
+        # Parse imported secrets
+        jq -r '[.imports // [] | reverse | .[].secrets[]? | {(.secretKey): .secretValue}] | add // {}' \
+          "${TMPDIR}/secrets_response" > "${TMPDIR}/imported_secrets.json" 2>/dev/null || echo '{}' > "${TMPDIR}/imported_secrets.json"
+
+        # Parse direct secrets
+        jq -r '[.secrets[]? | {(.secretKey): .secretValue}] | add // {}' \
+          "${TMPDIR}/secrets_response" > "${TMPDIR}/direct_secrets.json" || {
+          echo "::error::Failed to parse Infisical API response."
+          exit 1
+        }
+
+        # Merge: imports as base, direct secrets override
+        jq -s '.[0] * .[1]' "${TMPDIR}/imported_secrets.json" "${TMPDIR}/direct_secrets.json" > "${TMPDIR}/all_secrets.json" || {
+          echo "::error::Failed to parse Infisical API response."
+          exit 1
+        }
+
+        SECRET_COUNT=$(jq 'length' "${TMPDIR}/all_secrets.json")
+        if [[ "${SECRET_COUNT}" -eq 0 ]]; then
+          echo "::error::No secrets found at path ${SECRET_PATH} in project ${INPUT_PROJECT_ID}, environment ${INPUT_ENV_SLUG}."
+          exit 1
+        fi
+
+        echo "Found ${SECRET_COUNT} secret(s)."
+
+        # Validate secret key names (must be valid env var names)
+        INVALID_KEYS=()
+        while IFS= read -r SECRET_KEY; do
+          if [[ ! "${SECRET_KEY}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+            INVALID_KEYS+=("${SECRET_KEY}")
+          fi
+        done < <(jq -r 'to_entries[].key' "${TMPDIR}/all_secrets.json")
+
+        if (( ${#INVALID_KEYS[@]} > 0 )); then
+          echo "::error::Secret key names must match [A-Za-z_][A-Za-z0-9_]* to be valid environment variables."
+          for BAD_KEY in "${INVALID_KEYS[@]}"; do
+            printf '::error::Invalid secret key: "%s"\n' "${BAD_KEY}"
+          done
+          exit 1
+        fi
+
+        # Mask each line of every secret value individually
+        # (::add-mask:: only works with single-line values)
+        # Escape % to prevent workflow command injection via %0A/%0D sequences
+        jq -r 'to_entries[].value' "${TMPDIR}/all_secrets.json" | while IFS= read -r MASK_LINE; do
+          if [[ -n "${MASK_LINE}" ]]; then
+            ESCAPED_MASK="${MASK_LINE//'%'/'%25'}"
+            ESCAPED_MASK="${ESCAPED_MASK//$'\r'/'%0D'}"
+            ESCAPED_MASK="${ESCAPED_MASK//$'\n'/'%0A'}"
+            echo "::add-mask::${ESCAPED_MASK}"
+          fi
+        done
+
+        # --- Step 5: Export secrets ---
+        if [[ "${INPUT_EXPORT_TYPE}" == "file" ]]; then
+          FILE_PATH="${GITHUB_WORKSPACE}/${INPUT_FILE_PATH}"
+          mkdir -p "$(dirname "${FILE_PATH}")"
+          ( umask 077 && : > "${FILE_PATH}" )
+        fi
+
+        while IFS= read -r -d '' KEY && IFS= read -r -d '' VALUE; do
+          if [[ "${INPUT_EXPORT_TYPE}" == "env" ]]; then
+            # Generate a per-secret delimiter that doesn't appear in the value
+            while :; do
+              DELIM="GHEOF_$(openssl rand -hex 8)"
+              if ! grep -qxF "${DELIM}" <<< "${VALUE}"; then
+                break
+              fi
+            done
+            {
+              echo "${KEY}<<${DELIM}"
+              echo "${VALUE}"
+              echo "${DELIM}"
+            } >> "${GITHUB_ENV}"
+          elif [[ "${INPUT_EXPORT_TYPE}" == "file" ]]; then
+            ESCAPED_VALUE="${VALUE//\\/\\\\}"
+            ESCAPED_VALUE="${ESCAPED_VALUE//\"/\\\"}"
+            ESCAPED_VALUE="${ESCAPED_VALUE//\$/\\\$}"
+            ESCAPED_VALUE="${ESCAPED_VALUE//\`/\\\`}"
+            ESCAPED_VALUE="${ESCAPED_VALUE//$'\n'/\\n}"
+            echo "${KEY}=\"${ESCAPED_VALUE}\"" >> "${FILE_PATH}"
+          fi
+        done < <(jq -j 'to_entries[] | .key + "\u0000" + .value + "\u0000"' "${TMPDIR}/all_secrets.json")
+
+        echo "Successfully exported ${SECRET_COUNT} secret(s) via ${INPUT_EXPORT_TYPE}."
