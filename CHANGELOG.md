@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.12.0](https://github.com/NethermindEth/github-workflows/compare/v1.11.6...v1.12.0) (2026-03-27)
+
+
+### Features
+
+* add Infisical secrets composite action and example workflows ([#134](https://github.com/NethermindEth/github-workflows/issues/134)) ([2f0ac6f](https://github.com/NethermindEth/github-workflows/commit/2f0ac6fadf09632d926bb17d667083f01c0b22f8))
+* implement get_infisical_secrets composite action with examples and documentation ([2f0ac6f](https://github.com/NethermindEth/github-workflows/commit/2f0ac6fadf09632d926bb17d667083f01c0b22f8))
+
+
+### Bug Fixes
+
+* address all code scanning alerts ([#136](https://github.com/NethermindEth/github-workflows/issues/136)) ([def5c61](https://github.com/NethermindEth/github-workflows/commit/def5c61e466ac44e3b98d39196d045d5704121c4))
+* harden all reusable workflows against code scanning alerts ([3e49533](https://github.com/NethermindEth/github-workflows/commit/3e4953314b0e0e590e7ce1477a759196a2b21186))
+* harden all reusable workflows against code scanning alerts ([def5c61](https://github.com/NethermindEth/github-workflows/commit/def5c61e466ac44e3b98d39196d045d5704121c4))
+
 ## [1.11.6](https://github.com/NethermindEth/github-workflows/compare/v1.11.5...v1.11.6) (2026-03-24)
 
 
