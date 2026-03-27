@@ -19,25 +19,25 @@ jobs:
           oidc-provider-name: github-nethermindeth
 
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@v4
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
 
       - name: Install terraform-docs
-        uses: jaxxstorm/action-install-gh-release@v2.1.0
+        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
         with:
           repo: terraform-docs/terraform-docs
           tag: v0.17.0
 
       - name: Install tflint
-        uses: jaxxstorm/action-install-gh-release@v2.1.0
+        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
         with:
           repo: terraform-linters/tflint
           tag: v0.55.1
 
       - name: Run pre-commit hooks
-        uses: pre-commit/action@v3.0.1
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1

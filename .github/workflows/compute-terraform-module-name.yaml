@@ -20,8 +20,10 @@ jobs:
     steps:
       - id: compute
         shell: bash
+        env:
+          INPUT_REPOSITORY_NAME: ${{ inputs.repository_name }}
         run: |
-          REPOSITORY_NAME=${{ inputs.repository_name }}
+          REPOSITORY_NAME="${INPUT_REPOSITORY_NAME}"
           REPOSITORY_NAME=${REPOSITORY_NAME#*/}
           PROVIDER_AND_MODULE=${REPOSITORY_NAME#*-}
           MODULE_NAME=${PROVIDER_AND_MODULE#*-}
