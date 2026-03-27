@@ -39,11 +39,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set environment variables
+        env:
+          INPUT_SOURCE_REPO_NAME: ${{ inputs.source_repo_name }}
+          INPUT_TARGET_REPO_NAME: ${{ inputs.target_repo_name }}
+          INPUT_IMAGE_NAME: ${{ inputs.image_name }}
         run: |
-          SOURCE_IMAGE="${{ inputs.source_repo_name }}/${{ inputs.image_name }}"
-          TARGET_IMAGE="${{ inputs.target_repo_name }}/${{ inputs.image_name }}"
-          echo "SOURCE_IMAGE=${SOURCE_IMAGE}" >> $GITHUB_ENV
-          echo "TARGET_IMAGE=${TARGET_IMAGE}" >> $GITHUB_ENV
+          SOURCE_IMAGE="${INPUT_SOURCE_REPO_NAME}/${INPUT_IMAGE_NAME}"
+          TARGET_IMAGE="${INPUT_TARGET_REPO_NAME}/${INPUT_IMAGE_NAME}"
+          EOF_MARKER="GHEOF_$(openssl rand -hex 8)"
+          {
+            echo "SOURCE_IMAGE<<${EOF_MARKER}"
+            echo "${SOURCE_IMAGE}"
+            echo "${EOF_MARKER}"
+            echo "TARGET_IMAGE<<${EOF_MARKER}"
+            echo "${TARGET_IMAGE}"
+            echo "${EOF_MARKER}"
+          } >> "$GITHUB_ENV"
 
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -59,12 +70,18 @@ jobs:
 
       - name: Promote Images
         id: promote
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          INPUT_SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           # Promote all specified tags
-          IFS=',' read -ra TAGS <<< "${{ inputs.tags }}"
+          IFS=',' read -ra TAGS <<< "${INPUT_TAGS}"
+          for i in "${!TAGS[@]}"; do
+            TAGS[$i]=$(echo "${TAGS[$i]}" | xargs)
+          done
           for TAG in "${TAGS[@]}"; do
-            if [[ "${{ inputs.source_tag }}" != "none" ]]; then
-              source_image="${SOURCE_IMAGE}:${{ inputs.source_tag }}"
+            if [[ "${INPUT_SOURCE_TAG}" != "none" ]]; then
+              source_image="${SOURCE_IMAGE}:${INPUT_SOURCE_TAG}"
             else
               source_image="${SOURCE_IMAGE}:${TAG}"
             fi
@@ -87,9 +104,11 @@ jobs:
           push-to-registry: true
 
       - name: Record Promotion
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
         run: |
           echo "## Image Promotion :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "- From: $SOURCE_IMAGE" >> $GITHUB_STEP_SUMMARY
           echo "- To: $TARGET_IMAGE" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ inputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${INPUT_TAGS}" >> $GITHUB_STEP_SUMMARY
           echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

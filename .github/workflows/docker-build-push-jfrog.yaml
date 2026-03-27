@@ -134,26 +134,31 @@ jobs:
           ref: ${{ inputs.git_ref }}
           submodules: ${{ inputs.checkout_submodules }}
           fetch-depth: ${{ inputs.fetch-depth }}
+          persist-credentials: false
 
       - name: Set env vars
         id: env-vars
+        env:
+          INPUT_REPO_NAME: ${{ inputs.repo_name }}
+          INPUT_GROUP_NAME: ${{ inputs.group_name }}
+          INPUT_IMAGE_NAME: ${{ inputs.image_name }}
         run: |
           # Set Repo name
-          if [[ -n "${{ inputs.repo_name }}" ]]; then
-            export REPO_NAME="${{ inputs.repo_name }}"
-          elif [[ -n "${{ inputs.group_name }}" ]]; then
-            export REPO_NAME="${{ inputs.group_name }}-oci-local-dev"
+          if [[ -n "${INPUT_REPO_NAME}" ]]; then
+            export REPO_NAME="${INPUT_REPO_NAME}"
+          elif [[ -n "${INPUT_GROUP_NAME}" ]]; then
+            export REPO_NAME="${INPUT_GROUP_NAME}-oci-local-dev"
           else
             echo "Unable to determine the repo name.  Please set either group_name or the repo_name."
             exit 1
           fi
 
           # Set image name
-          echo "IMAGE_NAME=${REPO_NAME}/${{ inputs.image_name }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME=${REPO_NAME}/${INPUT_IMAGE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Install JFrog CLI
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@v4
+        uses: jfrog/setup-jfrog-cli@86dacb6974c66cc99e7651e1205f6581aaddba9a # v4.10.0
         env:
           JF_URL: https://${{ inputs.jfrog_url }}
         with:
@@ -168,8 +173,15 @@ jobs:
 
       - name: Run pre-build script
         if: ${{ inputs.pre_build_script != '' }}
+        env:
+          PRE_BUILD_SCRIPT: ${{ inputs.pre_build_script }}
         run: |
-          ${{ inputs.pre_build_script }}
+          # Accepted risk: pre_build_script is intentionally executed as caller-provided code
+          SCRIPT_PATH="${RUNNER_TEMP:-/tmp}/pre_build_$$.sh"
+          trap 'rm -f "$SCRIPT_PATH"' EXIT
+          printf '%s\n' "$PRE_BUILD_SCRIPT" > "$SCRIPT_PATH"
+          chmod +x "$SCRIPT_PATH"
+          bash "$SCRIPT_PATH"
 
       - name: Build and push
         uses: NethermindEth/github-action-image-build-and-push@fefef12a2baef6d339fb4b244b4cd45c40146161

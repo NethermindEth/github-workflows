@@ -130,6 +130,7 @@ jobs:
           ref: ${{ inputs.git_ref }}
           submodules: ${{ inputs.checkout_submodules }}
           fetch-depth: ${{ inputs.fetch-depth }}
+          persist-credentials: false
 
       - name: Login to Docker Hub
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
@@ -139,8 +140,15 @@ jobs:
 
       - name: Run pre-build script
         if: ${{ inputs.pre_build_script != '' }}
+        env:
+          PRE_BUILD_SCRIPT: ${{ inputs.pre_build_script }}
         run: |
-          ${{ inputs.pre_build_script }}
+          # Accepted risk: pre_build_script is intentionally executed as caller-provided code
+          SCRIPT_PATH="${RUNNER_TEMP:-/tmp}/pre_build_$$.sh"
+          trap 'rm -f "$SCRIPT_PATH"' EXIT
+          printf '%s\n' "$PRE_BUILD_SCRIPT" > "$SCRIPT_PATH"
+          chmod +x "$SCRIPT_PATH"
+          bash "$SCRIPT_PATH"
 
       - name: Build and push
         uses: NethermindEth/github-action-image-build-and-push@fefef12a2baef6d339fb4b244b4cd45c40146161
