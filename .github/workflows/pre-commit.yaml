@@ -2,6 +2,9 @@ on:
   workflow_call:
 
 jobs:
+  other:
+    uses: ./.github/workflows/pre-commit-auth.yaml
+
   pre-commit:
     runs-on: ubuntu-latest
     steps:
