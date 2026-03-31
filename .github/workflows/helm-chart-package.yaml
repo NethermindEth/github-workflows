@@ -85,7 +85,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Set up JFrog CLI
-        uses: jfrog/setup-jfrog-cli@6359487fb3e3de9d8ce7c1c8bbe8ed298a55d061 # v4.5.9
+        uses: jfrog/setup-jfrog-cli@1641575d87647fb969c0545f0b6a76873e328b7c # v5.0.0
 
       - name: Configure JFrog CLI
         env:
