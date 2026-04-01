@@ -35,9 +35,12 @@ We do not recommend you track a branch like `main`.
 The stable tag is a manual process, which must be decided _after_ the version has been validated in
 at least a few repositories. To do so, simply:
 
+> [!WARNING]
+> The `stable` tag **must** be a lightweight tag. Annotated tags break nested reusable workflow
+> resolution in GitHub Actions (see [community discussion](https://github.com/orgs/community/discussions/48693)).
 ```shell
 NEW_STABLE_VERSION=v9.8.7  # Replace with the new version
-git tag -f -a stable "$NEW_STABLE_VERSION^{}" -m "stable -> $NEW_STABLE_VERSION"
+git tag -f --no-sign stable "$(git rev-parse $NEW_STABLE_VERSION^{})"
 git push origin -f refs/tags/stable
 ```
 
