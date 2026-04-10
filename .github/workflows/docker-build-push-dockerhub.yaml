@@ -115,6 +115,7 @@ on:
 permissions:
   id-token: write
   attestations: write
+  artifact-metadata: write
   contents: read
 
 jobs:
@@ -151,7 +152,7 @@ jobs:
           bash "$SCRIPT_PATH"
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@fefef12a2baef6d339fb4b244b4cd45c40146161
+        uses: NethermindEth/github-action-image-build-and-push@972f8cf69d5ede0a0cb9d7cc953fa902538e2ffa
         with:
           registry: "dockerhub"
           image_name: ${{ inputs.repo_name }}/${{ inputs.image_name }}
