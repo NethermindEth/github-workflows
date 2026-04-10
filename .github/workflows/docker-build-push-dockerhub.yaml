@@ -115,7 +115,6 @@ on:
 permissions:
   id-token: write
   attestations: write
-  artifact-metadata: write
   contents: read
 
 jobs:

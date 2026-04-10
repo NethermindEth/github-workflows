@@ -33,12 +33,6 @@ on:
         description: "Docker Hub password"
         required: true
 
-permissions:
-  id-token: write
-  attestations: write
-  artifact-metadata: write
-  contents: read
-
 jobs:
   promote:
     name: Promote Docker image
