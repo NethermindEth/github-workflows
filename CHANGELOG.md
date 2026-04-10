@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.1](https://github.com/NethermindEth/github-workflows/compare/v1.12.0...v1.12.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* add artifact-metadata:write permission and bump composite action ([44df134](https://github.com/NethermindEth/github-workflows/commit/44df1347fab63287b4d9f812ee7d161fd9b79f41))
+* **deps:** bump the all-github-actions group across 1 directory with 5 updates ([#139](https://github.com/NethermindEth/github-workflows/issues/139)) ([875c617](https://github.com/NethermindEth/github-workflows/commit/875c6171c64d0cad015ef520d74e5f748240a008))
+* resolve Docker build workflow warnings ([#141](https://github.com/NethermindEth/github-workflows/issues/141)) ([44df134](https://github.com/NethermindEth/github-workflows/commit/44df1347fab63287b4d9f812ee7d161fd9b79f41))
+
 ## [1.12.0](https://github.com/NethermindEth/github-workflows/compare/v1.11.6...v1.12.0) (2026-03-27)
 
 
