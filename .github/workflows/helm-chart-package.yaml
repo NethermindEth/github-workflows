@@ -85,7 +85,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Set up JFrog CLI
-        uses: jfrog/setup-jfrog-cli@6359487fb3e3de9d8ce7c1c8bbe8ed298a55d061 # v4.5.9
+        uses: jfrog/setup-jfrog-cli@1641575d87647fb969c0545f0b6a76873e328b7c # v5.0.0
 
       - name: Configure JFrog CLI
         env:
@@ -210,7 +210,7 @@ jobs:
 
       - name: Send notification on PR
         if: github.event.pull_request != null
-        uses: marocchino/sticky-pull-request-comment@70d2764d1a7d5d9560b100cbea0077fc8f633987 # v3
+        uses: marocchino/sticky-pull-request-comment@d4d6b0936434b21bc8345ad45a440c5f7d2c40ff # v3
         with:
           header: "Chart Compatibility Check"
           recreate: true

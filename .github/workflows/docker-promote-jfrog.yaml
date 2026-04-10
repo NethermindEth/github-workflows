@@ -95,21 +95,21 @@ jobs:
 
       - name: Install JFrog CLI
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@86dacb6974c66cc99e7651e1205f6581aaddba9a # v4.10.0
+        uses: jfrog/setup-jfrog-cli@1641575d87647fb969c0545f0b6a76873e328b7c # v5.0.0
         env:
           JF_URL: https://${{ inputs.jfrog_url }}
         with:
           oidc-provider-name: github-nethermindeth
 
       - name: Login to Registry with OIDC
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ inputs.jfrog_url }}
           username: ${{ steps.jfrog.outputs.oidc-user }}
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Setup oras cli
-        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
 
       - name: Promote Images
         id: promote
