@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/NethermindEth/github-workflows/compare/v1.12.2...v2.0.0) (2026-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Caller workflows that set explicit permissions must add `artifact-metadata: write` to their permissions block. Without it, GitHub will reject the workflow with a validation error.
+
+### Features
+
+* require artifact-metadata:write permission for attestations ([#144](https://github.com/NethermindEth/github-workflows/issues/144)) ([e7be9b5](https://github.com/NethermindEth/github-workflows/commit/e7be9b531cf2ca88457b5e89bc3e47fd51b9b828))
+
 ## [1.12.2](https://github.com/NethermindEth/github-workflows/compare/v1.12.1...v1.12.2) (2026-04-10)
 
 
