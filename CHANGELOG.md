@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.2](https://github.com/NethermindEth/github-workflows/compare/v1.12.1...v1.12.2) (2026-04-10)
+
+
+### Bug Fixes
+
+* remove artifact-metadata:write from reusable workflows ([#142](https://github.com/NethermindEth/github-workflows/issues/142)) ([88588eb](https://github.com/NethermindEth/github-workflows/commit/88588ebd06c9de63dcacae84c249d0c9f56f46b1))
+
 ## [1.12.1](https://github.com/NethermindEth/github-workflows/compare/v1.12.0...v1.12.1) (2026-04-10)
 
 
