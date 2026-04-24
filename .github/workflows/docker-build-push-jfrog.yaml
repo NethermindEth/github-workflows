@@ -2,6 +2,7 @@ on:
   workflow_call:
     inputs:
       runner:
+        # Kept for backwards compatibility but ignored (hardcoded to native matrix)
         description: "Runner to use"
         type: string
         required: false
@@ -57,6 +58,7 @@ on:
         required: false
         default: ""
       platforms:
+        # Kept for backwards compatibility but ignored (hardcoded to native matrix)
         description: "Platforms to build for (comma-separated)"
         type: string
         default: "linux/amd64,linux/arm64"
@@ -67,6 +69,7 @@ on:
         required: false
         default: 1
       setup-qemu:
+        # Kept for backwards compatibility but ignored (hardcoded to native matrix)
         description: "Set up QEMU"
         type: boolean
         default: false
@@ -123,9 +126,16 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Build and publish Docker image
-    runs-on: ${{ inputs.runner }}
+  build:
+    name: Build temporary image
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+          - os: ubuntu-arm64-4-core
+            platform: linux/arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -155,7 +165,7 @@ jobs:
           fi
 
           # Set image name
-          echo "IMAGE_NAME=${REPO_NAME}/${INPUT_IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME=${REPO_NAME}/${INPUT_IMAGE_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Install JFrog CLI
         id: jfrog
@@ -189,12 +199,12 @@ jobs:
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
-          image_tags: ${{ inputs.additional_tags }}
+          image_tags: "temp-${{ matrix.os }}"
           push-to-registry: ${{ inputs.push }}
-          platforms: ${{ inputs.platforms }}
+          platforms: ${{ matrix.platform }}
           context: ${{ inputs.context }}
           dockerfile_path: ${{ inputs.dockerfile_path }}
-          setup-qemu: ${{ inputs.setup-qemu }}
+          setup-qemu: false
           secrets: ${{ inputs.docker_secrets }}
           secret-envs: ${{ inputs.docker_secret_envs }}
           secret-files: ${{ inputs.docker_secret_files }}
@@ -202,3 +212,67 @@ jobs:
           build-args: ${{ inputs.docker_build_args }}
           ignore_trivy: ${{ inputs.ignore_trivy }}
           run_trivy: ${{ inputs.run_trivy }}
+
+  merge:
+    name: Merge and push multi-arch image
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: ${{ inputs.push == true }}
+    steps:
+      - name: Set env vars
+        # Duplicated deliberately because GitHub Action jobs do not share environmental state
+        id: env-vars
+        env:
+          INPUT_REPO_NAME: ${{ inputs.repo_name }}
+          INPUT_GROUP_NAME: ${{ inputs.group_name }}
+          INPUT_IMAGE_NAME: ${{ inputs.image_name }}
+        run: |
+          # Set Repo name
+          if [[ -n "${INPUT_REPO_NAME}" ]]; then
+            export REPO_NAME="${INPUT_REPO_NAME}"
+          elif [[ -n "${INPUT_GROUP_NAME}" ]]; then
+            export REPO_NAME="${INPUT_GROUP_NAME}-oci-local-dev"
+          else
+            echo "Unable to determine the repo name.  Please set either group_name or the repo_name."
+            exit 1
+          fi
+
+          # Set image name
+          echo "IMAGE_NAME=${REPO_NAME}/${INPUT_IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Install JFrog CLI
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@1641575d87647fb969c0545f0b6a76873e328b7c # v5.0.0
+        env:
+          JF_URL: https://${{ inputs.jfrog_url }}
+        with:
+          oidc-provider-name: github-nethermindeth
+
+      - name: Login to Registry with OIDC
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ inputs.jfrog_url }}
+          username: ${{ steps.jfrog.outputs.oidc-user }}
+          password: ${{ steps.jfrog.outputs.oidc-token }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create manifest list and push
+        run: |
+          IMAGE_URI="${{ inputs.jfrog_url }}/${{ steps.env-vars.outputs.IMAGE_NAME }}"
+
+          # Prepare tag arguments
+          if [ -z "${{ inputs.additional_tags }}" ]; then
+            TAG_ARGS="-t $IMAGE_URI:latest"
+          else
+            IFS=',' read -ra TAGS <<< "${{ inputs.additional_tags }}"
+            TAG_ARGS=""
+            for tag in "${TAGS[@]}"; do
+              TAG_ARGS="$TAG_ARGS -t $IMAGE_URI:$tag"
+            done
+          fi
+
+          docker buildx imagetools create $TAG_ARGS \
+            $IMAGE_URI:temp-ubuntu-latest \
+            $IMAGE_URI:temp-ubuntu-arm64-4-core
