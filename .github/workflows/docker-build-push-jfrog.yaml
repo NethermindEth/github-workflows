@@ -256,17 +256,21 @@ jobs:
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
 
       - name: Create manifest list and push
+        env:
+          JFROG_URL: ${{ inputs.jfrog_url }}
+          IMAGE_NAME: ${{ steps.env-vars.outputs.IMAGE_NAME }}
+          ADDITIONAL_TAGS: ${{ inputs.additional_tags }}
         run: |
-          IMAGE_URI="${{ inputs.jfrog_url }}/${{ steps.env-vars.outputs.IMAGE_NAME }}"
-
+          IMAGE_URI="${JFROG_URL}/${IMAGE_NAME}"
+          
           # Prepare tag arguments
-          if [ -z "${{ inputs.additional_tags }}" ]; then
+          if [ -z "$ADDITIONAL_TAGS" ]; then
             TAG_ARGS="-t $IMAGE_URI:latest"
           else
-            IFS=',' read -ra TAGS <<< "${{ inputs.additional_tags }}"
+            IFS=',' read -ra TAGS <<< "$ADDITIONAL_TAGS"
             TAG_ARGS=""
             for tag in "${TAGS[@]}"; do
               TAG_ARGS="$TAG_ARGS -t $IMAGE_URI:$tag"
