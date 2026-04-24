@@ -133,7 +133,7 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux/amd64
-          - os: ubuntu-arm64-4-core
+          - os: ubuntu-24.04-arm
             platform: linux/arm64
     runs-on: ${{ matrix.os }}
     steps:
@@ -199,7 +199,7 @@ jobs:
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
-          image_tags: "temp-${{ matrix.os }}"
+          image_tags: "arch-${{ matrix.os }}"
           push-to-registry: ${{ inputs.push }}
           platforms: ${{ matrix.platform }}
           context: ${{ inputs.context }}
@@ -274,5 +274,5 @@ jobs:
           fi
 
           docker buildx imagetools create $TAG_ARGS \
-            $IMAGE_URI:temp-ubuntu-latest \
-            $IMAGE_URI:temp-ubuntu-arm64-4-core
+            $IMAGE_URI:arch-ubuntu-latest \
+            $IMAGE_URI:arch-ubuntu-24.04-arm
