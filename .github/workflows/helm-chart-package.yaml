@@ -171,7 +171,7 @@ jobs:
       - name: Run Trivy vulnerability scanner in IaC mode
         id: trivy
         continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: "config"
           scan-ref: "${{ inputs.CHART_PATH }}/${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}.tgz"
@@ -210,7 +210,7 @@ jobs:
 
       - name: Send notification on PR
         if: github.event.pull_request != null
-        uses: marocchino/sticky-pull-request-comment@d4d6b0936434b21bc8345ad45a440c5f7d2c40ff # v3
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3
         with:
           header: "Chart Compatibility Check"
           recreate: true
