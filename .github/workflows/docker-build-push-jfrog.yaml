@@ -3,7 +3,7 @@ on:
     inputs:
       runner:
         # Kept for backwards compatibility but ignored (hardcoded to native matrix)
-        description: "Runner to use"
+        description: "Deprecated: ignored. Native runners are selected by the workflow build matrix."
         type: string
         required: false
         default: "ubuntu-latest"
@@ -59,7 +59,7 @@ on:
         default: ""
       platforms:
         # Kept for backwards compatibility but ignored (hardcoded to native matrix)
-        description: "Platforms to build for (comma-separated)"
+        description: "Deprecated: ignored. The workflow builds linux/amd64 and linux/arm64 natively."
         type: string
         default: "linux/amd64,linux/arm64"
         required: false
@@ -70,7 +70,7 @@ on:
         default: 1
       setup-qemu:
         # Kept for backwards compatibility but ignored (hardcoded to native matrix)
-        description: "Set up QEMU"
+        description: "Deprecated: ignored. QEMU is not used by this native build workflow."
         type: boolean
         default: false
         required: false
@@ -199,7 +199,7 @@ jobs:
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
-          image_tags: "arch-${{ matrix.os }}"
+          image_tags: "arch-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.os }}"
           push-to-registry: ${{ inputs.push }}
           platforms: ${{ matrix.platform }}
           context: ${{ inputs.context }}
@@ -258,25 +258,52 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
 
+      - name: Checkout source for resolved SHA
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ inputs.git_repository }}
+          token: ${{ secrets.git_token || github.token }}
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Resolve git SHA
+        id: git-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Create manifest list and push
         env:
           JFROG_URL: ${{ inputs.jfrog_url }}
           IMAGE_NAME: ${{ steps.env-vars.outputs.IMAGE_NAME }}
           ADDITIONAL_TAGS: ${{ inputs.additional_tags }}
+          RESOLVED_GIT_SHA: ${{ steps.git-sha.outputs.sha }}
+          TEMP_TAG_PREFIX: arch-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           IMAGE_URI="${JFROG_URL}/${IMAGE_NAME}"
-          
+
           # Prepare tag arguments
-          if [ -z "$ADDITIONAL_TAGS" ]; then
-            TAG_ARGS="-t $IMAGE_URI:latest"
+          TAG_ARGS=()
+          TRIMMED_ADDITIONAL_TAGS="${ADDITIONAL_TAGS#"${ADDITIONAL_TAGS%%[![:space:]]*}"}"
+          TRIMMED_ADDITIONAL_TAGS="${TRIMMED_ADDITIONAL_TAGS%"${TRIMMED_ADDITIONAL_TAGS##*[![:space:]]}"}"
+          if [ -z "$TRIMMED_ADDITIONAL_TAGS" ]; then
+            TAG_ARGS+=("-t" "$IMAGE_URI:latest")
+            TAG_ARGS+=("-t" "$IMAGE_URI:$RESOLVED_GIT_SHA")
           else
             IFS=',' read -ra TAGS <<< "$ADDITIONAL_TAGS"
-            TAG_ARGS=""
             for tag in "${TAGS[@]}"; do
-              TAG_ARGS="$TAG_ARGS -t $IMAGE_URI:$tag"
+              tag="${tag#"${tag%%[![:space:]]*}"}"
+              tag="${tag%"${tag##*[![:space:]]}"}"
+              if [ -n "$tag" ]; then
+                TAG_ARGS+=("-t" "$IMAGE_URI:$tag")
+              fi
             done
           fi
 
-          docker buildx imagetools create $TAG_ARGS \
-            $IMAGE_URI:arch-ubuntu-latest \
-            $IMAGE_URI:arch-ubuntu-24.04-arm
+          if [ "${#TAG_ARGS[@]}" -eq 0 ]; then
+            echo "No image tags resolved from additional_tags input."
+            exit 1
+          fi
+
+          docker buildx imagetools create "${TAG_ARGS[@]}" \
+            "$IMAGE_URI:${TEMP_TAG_PREFIX}-ubuntu-latest" \
+            "$IMAGE_URI:${TEMP_TAG_PREFIX}-ubuntu-24.04-arm"
