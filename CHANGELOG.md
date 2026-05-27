@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/NethermindEth/github-workflows/compare/v2.0.1...v2.0.2) (2026-05-27)
+
+
+### Bug Fixes
+
+* **deps:** bump the all-github-actions group across 1 directory with 2 updates ([#151](https://github.com/NethermindEth/github-workflows/issues/151)) ([6de5839](https://github.com/NethermindEth/github-workflows/commit/6de58394df4574224954f2f3e58f0f7275b92803))
+
 ## [2.0.1](https://github.com/NethermindEth/github-workflows/compare/v2.0.0...v2.0.1) (2026-04-28)
 
 
