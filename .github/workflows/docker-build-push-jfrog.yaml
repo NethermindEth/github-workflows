@@ -111,9 +111,30 @@ on:
         required: false
         type: boolean
         default: true
+      sign_image:
+        description: "Sign the pushed image with JFrog Evidence"
+        required: false
+        type: boolean
+        default: true
+      signing_key_alias:
+        description: "JFrog key alias for the Evidence signing key"
+        required: false
+        type: string
+        default: "jfrog-evidence-image-signing"
+      predicate_type:
+        description: "Predicate type URI for the signature Evidence"
+        required: false
+        type: string
+        default: "https://jfrog.com/evidence/signature/v1"
     secrets:
       git_token:
         description: "Git token to use for checkout"
+        required: false
+      infisical_identity_id:
+        description: "Infisical machine identity ID for the image-signing key (required when sign_image is true)"
+        required: false
+      infisical_project_id:
+        description: "Infisical project ID holding the image-signing private key (required when sign_image is true)"
         required: false
 
 permissions:
@@ -189,7 +210,9 @@ jobs:
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
-          image_tags: ${{ inputs.additional_tags }}
+          image_tags: |
+            ${{ github.sha }}
+            ${{ inputs.additional_tags }}
           push-to-registry: ${{ inputs.push }}
           platforms: ${{ inputs.platforms }}
           context: ${{ inputs.context }}
@@ -202,3 +225,101 @@ jobs:
           build-args: ${{ inputs.docker_build_args }}
           ignore_trivy: ${{ inputs.ignore_trivy }}
           run_trivy: ${{ inputs.run_trivy }}
+
+      - name: Resolve image digest
+        id: digest
+        if: ${{ inputs.push && inputs.sign_image }}
+        env:
+          IMAGE_REF: "${{ inputs.jfrog_url }}/${{ steps.env-vars.outputs.IMAGE_NAME }}:${{ github.sha }}"
+        run: |
+          set -euo pipefail
+          DIGEST="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .Manifest.Digest}}' | jq -r .)"
+          if [[ -z "$DIGEST" || "$DIGEST" != sha256:* ]]; then
+            echo "Failed to resolve a sha256 digest for $IMAGE_REF (got: '$DIGEST')." >&2
+            exit 1
+          fi
+          echo "IMAGE_DIGEST=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Resolved $IMAGE_REF -> $DIGEST"
+
+      - name: Fetch signing key from Infisical
+        if: ${{ inputs.push && inputs.sign_image }}
+        uses: NethermindEth/github-workflows/get_infisical_secrets@main
+        with:
+          identity-id: ${{ secrets.infisical_identity_id }}
+          project-id: ${{ secrets.infisical_project_id }}
+          env-slug: prod
+          secret-path: "/github/workflows_critical/jfrog-evidence"
+
+      - name: Generate signature predicate
+        if: ${{ inputs.push && inputs.sign_image }}
+        env:
+          P_ACTOR: ${{ github.actor }}
+          P_WORKFLOW: ${{ github.workflow }}
+          P_RUN_ID: ${{ github.run_id }}
+          P_COMMIT: ${{ github.sha }}
+          P_REPOSITORY: ${{ github.repository }}
+          P_REF: ${{ github.ref }}
+          P_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg actor "$P_ACTOR" \
+            --arg workflow "$P_WORKFLOW" \
+            --arg run_id "$P_RUN_ID" \
+            --arg commit "$P_COMMIT" \
+            --arg repository "$P_REPOSITORY" \
+            --arg ref "$P_REF" \
+            --arg image_digest "$P_DIGEST" \
+            --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{actor:$actor, workflow:$workflow, run_id:$run_id, commit:$commit, repository:$repository, ref:$ref, timestamp:$timestamp, image_digest:$image_digest}' \
+            > predicate.json
+          cat predicate.json
+
+      - name: Sign image with JFrog Evidence
+        if: ${{ inputs.push && inputs.sign_image }}
+        env:
+          IMAGE_NAME: ${{ steps.env-vars.outputs.IMAGE_NAME }}
+          PACKAGE_VERSION: ${{ github.sha }}
+          REPO_NAME_INPUT: ${{ inputs.repo_name }}
+          GROUP_NAME_INPUT: ${{ inputs.group_name }}
+          PREDICATE_TYPE: ${{ inputs.predicate_type }}
+          KEY_ALIAS: ${{ inputs.signing_key_alias }}
+          PRIVATE_KEY: ${{ env.IMAGE_SIGNING_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$REPO_NAME_INPUT" ]]; then
+            REPO_NAME="$REPO_NAME_INPUT"
+          else
+            REPO_NAME="${GROUP_NAME_INPUT}-oci-local-dev"
+          fi
+          # IMAGE_NAME is "<repo>/<image>"; package-name is just "<image>"
+          PACKAGE_NAME="${IMAGE_NAME#*/}"
+          jf evd create \
+            --package-name "$PACKAGE_NAME" \
+            --package-version "$PACKAGE_VERSION" \
+            --package-repo-name "$REPO_NAME" \
+            --predicate ./predicate.json \
+            --predicate-type "$PREDICATE_TYPE" \
+            --key "$PRIVATE_KEY" \
+            --key-alias "$KEY_ALIAS"
+
+      - name: Evidence summary
+        if: ${{ inputs.push && inputs.sign_image }}
+        env:
+          IMAGE_NAME: ${{ steps.env-vars.outputs.IMAGE_NAME }}
+          PACKAGE_VERSION: ${{ github.sha }}
+          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+          PREDICATE_TYPE: ${{ inputs.predicate_type }}
+          KEY_ALIAS: ${{ inputs.signing_key_alias }}
+        run: |
+          {
+            echo "### JFrog Evidence signed"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Image | \`${IMAGE_NAME}\` |"
+            echo "| Package version (tag) | \`${PACKAGE_VERSION}\` |"
+            echo "| Manifest digest | \`${IMAGE_DIGEST}\` |"
+            echo "| Predicate type | \`${PREDICATE_TYPE}\` |"
+            echo "| Key alias | \`${KEY_ALIAS}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
