@@ -82,12 +82,11 @@ already binds to the resolved manifest.
 | `infisical_identity_id` | yes | Infisical machine identity ID (OIDC) for the signing-key project |
 | `infisical_project_id` | yes | Infisical project ID holding the private signing key |
 
-The private key is stored at a **shared, access-restricted** Infisical path
-`/github/workflows_critical/jfrog-evidence` (key name `IMAGE_SIGNING_PRIVATE_KEY`),
-not the per-repo `/github/workflows/<repo>` path. The `workflows_critical/**`
-prefix is denied to global devops/developer roles and scoped to specific groups,
-which suits a signing key. Fetched via a `secret-path` override on
-`get_infisical_secrets`.
+The private key is stored at a **shared** Infisical path (Angkor Platform project)
+`/github/workflows/shared/github-workflows` (key name
+`DOCKER_IMAGE_SIGNING_PRIVATE_KEY`), not the per-repo `/github/workflows/<repo>`
+path, so a single signing key serves all consumers. Fetched via a `secret-path`
+override on `get_infisical_secrets`.
 
 ## Step sequence (added after `Build and push`)
 
@@ -159,9 +158,9 @@ larger; ed25519 is supported by `jf evd` but less universally consumed.
 
 ### Distribution
 
-- **Private key** → Infisical `/github/workflows_critical/jfrog-evidence`
-  (`IMAGE_SIGNING_PRIVATE_KEY`), CI-accessible via OIDC machine identity. Never
-  committed.
+- **Private key** → Infisical `/github/workflows/shared/github-workflows`
+  (`DOCKER_IMAGE_SIGNING_PRIVATE_KEY`, Angkor Platform project), CI-accessible via
+  OIDC machine identity. Never committed.
 - **Public key** → committed to
   `github-workflows/keys/jfrog-evidence-image-signing.pub`. Stable, versioned URL
   for Kyverno / ArgoCD to consume.

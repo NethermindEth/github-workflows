@@ -87,10 +87,10 @@ true. Set `sign_image: false` to opt out.
 | Secret | Description |
 |---|---|
 | `infisical_identity_id` | Infisical machine identity ID for the signing-key project |
-| `infisical_project_id` | Infisical project ID holding `IMAGE_SIGNING_PRIVATE_KEY` |
+| `infisical_project_id` | Infisical project ID (Angkor Platform) holding `DOCKER_IMAGE_SIGNING_PRIVATE_KEY` |
 
-The private key is stored at Infisical `/github/workflows_critical/jfrog-evidence`
-(secret name `IMAGE_SIGNING_PRIVATE_KEY`) and fetched at runtime.
+The private key is stored at Infisical `/github/workflows/shared/github-workflows`
+(secret name `DOCKER_IMAGE_SIGNING_PRIVATE_KEY`) and fetched at runtime.
 
 ### Offline verification
 
@@ -111,8 +111,8 @@ Public key: [`keys/jfrog-evidence-image-signing.pub`](../../keys/jfrog-evidence-
    openssl ecparam -name prime256v1 -genkey -noout -out private.pem
    openssl ec -in private.pem -pubout -out public.pem
    ```
-2. Replace `IMAGE_SIGNING_PRIVATE_KEY` at Infisical
-   `/github/workflows_critical/jfrog-evidence`.
+2. Replace `DOCKER_IMAGE_SIGNING_PRIVATE_KEY` at Infisical
+   `/github/workflows/shared/github-workflows` (Angkor Platform project).
 3. Commit the new public key to `keys/jfrog-evidence-image-signing.pub`.
 4. Update the Kyverno policy (ANG-2397) with the new public key.
 5. Keep the old public key until all images signed with it have aged out of

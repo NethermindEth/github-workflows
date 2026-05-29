@@ -248,7 +248,7 @@ jobs:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
           env-slug: prod
-          secret-path: "/github/workflows_critical/jfrog-evidence"
+          secret-path: "/github/workflows/shared/github-workflows"
 
       - name: Generate signature predicate
         if: ${{ inputs.push && inputs.sign_image }}
@@ -284,7 +284,7 @@ jobs:
           GROUP_NAME_INPUT: ${{ inputs.group_name }}
           PREDICATE_TYPE: ${{ inputs.predicate_type }}
           KEY_ALIAS: ${{ inputs.signing_key_alias }}
-          PRIVATE_KEY: ${{ env.IMAGE_SIGNING_PRIVATE_KEY }}
+          PRIVATE_KEY: ${{ env.DOCKER_IMAGE_SIGNING_PRIVATE_KEY }}
         run: |
           set -euo pipefail
           if [[ -n "$REPO_NAME_INPUT" ]]; then
