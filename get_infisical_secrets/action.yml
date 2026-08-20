@@ -144,7 +144,7 @@ runs:
           --data-urlencode "projectId=${INPUT_PROJECT_ID}" \
           --data-urlencode "environment=${INPUT_ENV_SLUG}" \
           --data-urlencode "secretPath=${SECRET_PATH}" \
-          --data-urlencode "includeImports=true" \
+          --data-urlencode "recursive=true" \
           --data-urlencode "expandSecretReferences=true")
 
         if [[ "${SECRETS_HTTP_CODE}" -ne 200 ]]; then
