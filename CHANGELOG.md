@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0](https://github.com/NethermindEth/github-workflows/compare/v2.0.2...v2.1.0) (2026-08-20)
+
+
+### Features
+
+* Update data-urlencode parameter in action.yml ([#162](https://github.com/NethermindEth/github-workflows/issues/162)) ([f7ae812](https://github.com/NethermindEth/github-workflows/commit/f7ae8126d837662d41ecfea4a9ee7122e988f546))
+
+
+### Bug Fixes
+
+* **deps:** bump actions/checkout from 6.0.2 to 6.0.3 in the all-github-actions group ([#153](https://github.com/NethermindEth/github-workflows/issues/153)) ([ead49a7](https://github.com/NethermindEth/github-workflows/commit/ead49a7b68915562848bb53f6fa5c7e992460838))
+* **deps:** bump actions/checkout in the all-github-actions group ([ead49a7](https://github.com/NethermindEth/github-workflows/commit/ead49a7b68915562848bb53f6fa5c7e992460838))
+* **deps:** bump the all-github-actions group across 1 directory with 4 updates ([#161](https://github.com/NethermindEth/github-workflows/issues/161)) ([254e6ec](https://github.com/NethermindEth/github-workflows/commit/254e6ec4c3ea753e6cc58d6c64b18ef6631aa296))
+* **deps:** bump the all-github-actions group across 1 directory with 8 updates ([#159](https://github.com/NethermindEth/github-workflows/issues/159)) ([1cb9b98](https://github.com/NethermindEth/github-workflows/commit/1cb9b98d062d03ed8b10fcf77fe96b6e3314464e))
+
 ## [2.0.2](https://github.com/NethermindEth/github-workflows/compare/v2.0.1...v2.0.2) (2026-05-27)
 
 
