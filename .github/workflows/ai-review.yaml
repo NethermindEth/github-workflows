@@ -54,6 +54,16 @@ on:
         type: string
         required: false
         default: "needs-human-review"
+      fail_on_missing_review:
+        description: >-
+          Fail the check when no judgable review was produced (LLM error, gateway outage,
+          malformed output), not just on a real security_concerns finding. Default true (matches
+          this workflow's fail-closed default). A consumer riding out a known gateway outage can
+          set false to drop that specific case to advisory-only (label still applied either way);
+          a real security finding always fails regardless of this input.
+        type: boolean
+        required: false
+        default: true
       skip_actor:
         description: "github.actor to skip the AI steps for (no Infisical creds on their runs)"
         type: string
@@ -172,9 +182,11 @@ jobs:
       # Hard gate on the /review JSON: block (exit 1) on an affirmative `security_concerns`
       # finding, OR when there's no judgable review at all (empty/unparseable output -- with
       # CONFIG.PROPAGATE_TOOL_ERRORS above this should already have failed the PR-Agent step
-      # itself, but the gate fails closed here too rather than trusting a single signal). The
-      # 0-100 score stays advisory: it rates overall quality, which correlates too weakly with
-      # "must block" to gate on.
+      # itself, but the gate fails closed here too rather than trusting a single signal), unless
+      # a caller opted into `fail_on_missing_review: false` for the second case (e.g. riding out a
+      # known gateway outage across every consuming repo without forking this workflow). A real
+      # security finding always blocks regardless of that input. The 0-100 score stays advisory:
+      # it rates overall quality, which correlates too weakly with "must block" to gate on.
       - name: PR-Agent gate
         if: ${{ !cancelled() && github.actor != inputs.skip_actor && (steps.pr_agent.outcome == 'success' || steps.pr_agent.outcome == 'failure') }}
         env:
@@ -183,6 +195,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GATE_LABEL: ${{ inputs.label }}
+          FAIL_ON_MISSING_REVIEW: ${{ inputs.fail_on_missing_review }}
         run: |
           python3 - <<'PYEOF'
           import json
@@ -194,6 +207,7 @@ jobs:
           from pathlib import Path
 
           LABEL = os.environ["GATE_LABEL"]
+          FAIL_ON_MISSING_REVIEW = os.environ.get("FAIL_ON_MISSING_REVIEW", "true").lower() == "true"
 
           # The only field values accepted as "no security concerns". Matched against the WHOLE
           # field (lowercased, trailing punctuation stripped) -- a prefix match would pass real
@@ -266,10 +280,14 @@ jobs:
                   print(f"gate: step summary write failed ({exc}); exit code still gates")
 
           def no_review(reason):
-              print(f"PR-AGENT GATE FAILED: {reason} -- applying {LABEL}")
-              step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
               sync_label(True)
-              return 1
+              if FAIL_ON_MISSING_REVIEW:
+                  print(f"PR-AGENT GATE FAILED: {reason} -- applying {LABEL}")
+                  step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+                  return 1
+              print(f"pr-agent gate: {reason} -- applying {LABEL} (fail_on_missing_review=false, advisory, exit 0)")
+              step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+              return 0
 
           def main():
               raw = os.environ.get("REVIEW_JSON", "")

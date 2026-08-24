@@ -95,7 +95,10 @@ jobs:
   be visibly red, never silently green with just a label (this workflow used to fail open on a
   missing review; that let a fully broken model config pass CI for a while before anyone noticed,
   see AUT-427). `CONFIG.PROPAGATE_TOOL_ERRORS` is set so PR-Agent's own step fails loudly on an
-  LLM error instead of swallowing it and exiting 0 with nothing to show.
+  LLM error instead of swallowing it and exiting 0 with nothing to show. A real `security_concerns`
+  finding always blocks; the "no judgable review" half of that can be relaxed to advisory-only
+  per caller via `fail_on_missing_review: false` (default `true`), for riding out a known gateway
+  outage without forking the workflow.
 - Skips entirely for `dependabot[bot]` (no Infisical creds on those runs) -- your own
   deterministic CI checks are what gates dependency-bump PRs, not this workflow.
 - Never runs on fork PRs (no secrets, no gate there).
