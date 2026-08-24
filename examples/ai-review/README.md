@@ -83,10 +83,14 @@ jobs:
 
 ## What it does and doesn't cover
 
-- Blocks the `ai-review` check only on an affirmative `security_concerns` finding from PR-Agent's
-  `/review`. Everything else (bugs, /improve suggestions, the 0-100 score) is advisory.
-- Fails **open** on a gateway outage or unparseable review (never reds every PR on infra
-  trouble) but fails **closed** the instant a real security finding is present.
+- Blocks the `ai-review` check on an affirmative `security_concerns` finding from PR-Agent's
+  `/review`, AND on any failure to produce a judgable review at all (LLM call error, gateway
+  outage, malformed output). Everything else (bugs, /improve suggestions, the 0-100 score) is
+  advisory. Fails **closed** in every case where something went wrong -- a broken pipeline should
+  be visibly red, never silently green with just a label (this workflow used to fail open on a
+  missing review; that let a fully broken model config pass CI for a while before anyone noticed,
+  see AUT-427). `CONFIG.PROPAGATE_TOOL_ERRORS` is set so PR-Agent's own step fails loudly on an
+  LLM error instead of swallowing it and exiting 0 with nothing to show.
 - Skips entirely for `dependabot[bot]` (no Infisical creds on those runs) -- your own
   deterministic CI checks are what gates dependency-bump PRs, not this workflow.
 - Never runs on fork PRs (no secrets, no gate there).

@@ -17,15 +17,21 @@ on:
         required: false
         default: ""
       model:
-        description: "Gateway model PR-Agent uses for review/describe/improve"
+        # MUST keep the "openai/" provider prefix: litellm (PR-Agent's client) needs a provider
+        # to know how to route the call. Without it: "litellm.BadRequestError: LLM Provider NOT
+        # provided". "openai/" is what routes through OPENAI.API_BASE (our gateway) below --
+        # dropping the prefix, or using another provider's own prefix (e.g. "gemini/"), makes
+        # litellm try to call that provider's real API directly, bypassing the gateway entirely.
+        description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix)"
         type: string
         required: false
-        default: "internal/default"
+        default: "openai/internal/default"
       fallback_model:
-        description: "Gateway fallback model if the primary model call fails"
+        # Same "openai/" prefix requirement as `model` above -- see that comment.
+        description: "Gateway fallback model if the primary model call fails (keep the openai/ prefix)"
         type: string
         required: false
-        default: "gemini/gemini-pro-latest"
+        default: "openai/anthropic/claude-sonnet-5"
       extra_instructions:
         description: "Repo-specific rules appended to PR-Agent's review and suggestion prompts"
         type: string
@@ -130,6 +136,11 @@ jobs:
           CONFIG.TEMPERATURE: "1.0"
           CONFIG.PUBLISH_OUTPUT: "true"
           CONFIG.AI_TIMEOUT: "150"
+          # Without this, PR-Agent swallows a failed LLM call (bad model string, gateway auth
+          # failure, timeout, ...) and exits 0 with no review -- the job stays green while
+          # producing nothing. Fail the job instead: a real failure must be visible, not silently
+          # papered over by the gate's own label.
+          CONFIG.PROPAGATE_TOOL_ERRORS: "true"
           # The gateway routes models to backends with differing parameter support; drop what a
           # backend can't take instead of erroring -- the review must not die on a routing detail.
           LITELLM.DROP_PARAMS: "true"
@@ -158,10 +169,12 @@ jobs:
           PR_CODE_SUGGESTIONS.SUGGESTIONS_SCORE_THRESHOLD: "6"
           PR_CODE_SUGGESTIONS.EXTRA_INSTRUCTIONS: ${{ inputs.extra_instructions }}
 
-      # Hard gate on the /review JSON: block (exit 1) only on an affirmative `security_concerns`
-      # finding. The 0-100 score stays advisory: it rates overall quality, which correlates too
-      # weakly with "must block" to gate on. Fails OPEN on missing/unparseable review (a gateway
-      # outage must not red every PR) but fails CLOSED the instant a real finding is present.
+      # Hard gate on the /review JSON: block (exit 1) on an affirmative `security_concerns`
+      # finding, OR when there's no judgable review at all (empty/unparseable output -- with
+      # CONFIG.PROPAGATE_TOOL_ERRORS above this should already have failed the PR-Agent step
+      # itself, but the gate fails closed here too rather than trusting a single signal). The
+      # 0-100 score stays advisory: it rates overall quality, which correlates too weakly with
+      # "must block" to gate on.
       - name: PR-Agent gate
         if: ${{ !cancelled() && github.actor != inputs.skip_actor && (steps.pr_agent.outcome == 'success' || steps.pr_agent.outcome == 'failure') }}
         env:
@@ -203,14 +216,14 @@ jobs:
               try:
                   data = json.loads(raw)
               except json.JSONDecodeError as exc:
-                  print(f"pr-agent gate: unparseable review output ({exc.msg}) -- skipping (advisory)")
+                  print(f"pr-agent gate: unparseable review output ({exc.msg})")
                   return None
               if not isinstance(data, dict):
-                  print(f"pr-agent gate: unexpected review shape ({type(data).__name__}) -- skipping (advisory)")
+                  print(f"pr-agent gate: unexpected review shape ({type(data).__name__})")
                   return None
               review = data.get("review", data)
               if not isinstance(review, dict):
-                  print("pr-agent gate: unexpected review shape (non-dict review) -- skipping (advisory)")
+                  print("pr-agent gate: unexpected review shape (non-dict review)")
                   return None
               return review
 
@@ -253,10 +266,10 @@ jobs:
                   print(f"gate: step summary write failed ({exc}); exit code still gates")
 
           def no_review(reason):
-              print(f"pr-agent gate: {reason} -- applying {LABEL} (advisory, exit 0)")
+              print(f"PR-AGENT GATE FAILED: {reason} -- applying {LABEL}")
               step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
               sync_label(True)
-              return 0
+              return 1
 
           def main():
               raw = os.environ.get("REVIEW_JSON", "")

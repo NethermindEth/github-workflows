@@ -17,15 +17,21 @@ on:
         required: false
         default: ""
       model:
-        description: "Gateway model PR-Agent uses for review/describe/improve"
+        # MUST keep the "openai/" provider prefix: litellm (PR-Agent's client) needs a provider
+        # to know how to route the call. Without it: "litellm.BadRequestError: LLM Provider NOT
+        # provided". "openai/" is what routes through OPENAI.API_BASE (our gateway) below --
+        # dropping the prefix, or using another provider's own prefix (e.g. "gemini/"), makes
+        # litellm try to call that provider's real API directly, bypassing the gateway entirely.
+        description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix)"
         type: string
         required: false
-        default: "internal/default"
+        default: "openai/internal/default"
       fallback_model:
-        description: "Gateway fallback model if the primary model call fails"
+        # Same "openai/" prefix requirement as `model` above -- see that comment.
+        description: "Gateway fallback model if the primary model call fails (keep the openai/ prefix)"
         type: string
         required: false
-        default: "gemini/gemini-pro-latest"
+        default: "openai/anthropic/claude-sonnet-5"
       extra_instructions:
         description: "Repo-specific rules appended to PR-Agent's review and suggestion prompts"
         type: string
@@ -97,6 +103,9 @@ jobs:
           CONFIG.TEMPERATURE: "1.0"
           CONFIG.PUBLISH_OUTPUT: "true"
           CONFIG.AI_TIMEOUT: "150"
+          # Without this, PR-Agent swallows a failed LLM call and exits 0 having done nothing --
+          # a commenter would see no response and no error. Fail the job instead.
+          CONFIG.PROPAGATE_TOOL_ERRORS: "true"
           LITELLM.DROP_PARAMS: "true"
           PR_DESCRIPTION.ENABLE_PR_DIAGRAM: "false"
           PR_REVIEWER.REQUIRE_SECURITY_REVIEW: "true"
