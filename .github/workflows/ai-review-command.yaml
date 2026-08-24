@@ -85,6 +85,21 @@ jobs:
           env-slug: ${{ inputs.env_slug }}
           secret-path: ${{ inputs.secret_path }}
 
+      # issue_comment events carry no base_ref (unlike pull_request), so PR_AGENT_CONFIG_BRANCH
+      # below has to be resolved explicitly. Without this, a slash-command /review would read any
+      # repo .pr_agent.toml from the PR's HEAD branch instead of its base -- exactly the
+      # self-weakening a PR could otherwise do, which ai-review.yaml's PR_AGENT_CONFIG_BRANCH
+      # already guards against on the automatic path.
+      - name: Resolve PR base ref
+        id: pr_base
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          base_ref=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName --jq .baseRefName)
+          echo "base_ref=${base_ref}" >> "$GITHUB_OUTPUT"
+
       # Same config surface as ai-review.yaml's PR-Agent review step -- an on-demand /review or
       # /improve must behave identically to the automatic one, and without OPENAI.API_BASE +
       # CONFIG.TEMPERATURE this would call the real OpenAI API with a gateway key and fail auth.
@@ -95,6 +110,7 @@ jobs:
         env:
           OPENAI.KEY: ${{ env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AGENT_CONFIG_BRANCH: ${{ steps.pr_base.outputs.base_ref }}
           OPENAI.API_BASE: "https://litellm.nethermind.dev/v1" # non-secret; KEY comes from above
           CONFIG.MODEL: ${{ inputs.model }}
           CONFIG.FALLBACK_MODELS: '["${{ inputs.fallback_model }}"]'

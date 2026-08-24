@@ -11,7 +11,12 @@ pattern running in `citizen-automations` today.
 2. **Infisical**: store `LLM_API_KEY` and `LLM_BASE_URL` at `/github/workflows/<your-repo-name>`
    in the environment you pass as `env_slug` (default `prod`).
 3. **Label**: create a `needs-human-review` label on the repo (or pass a different `label` input).
-4. Add `ai-review` as a required status check in branch protection on your default branch.
+4. Add the required status check in branch protection on your default branch. **The check name is
+   `<your-job-id> / ai-review`, not `ai-review`** -- GitHub prefixes a reusable-workflow job's
+   check with the CALLER's own job id. If you name your calling job `ai-review` (as in the example
+   below), the actual check name is `ai-review / ai-review`. Getting this wrong means branch
+   protection silently never enforces the gate -- verify the exact string in the PR's checks list
+   before relying on it.
 
 No `.pr_agent.toml` is required -- pass `model`, `fallback_model`, `extra_instructions`, and
 `num_max_findings` as workflow inputs (see below). **Confirmed empirically (AUT-427): these env
