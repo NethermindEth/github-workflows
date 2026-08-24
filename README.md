@@ -48,6 +48,10 @@ git push origin -f refs/tags/stable
 
 Read about it in the [examples/docker/README.md](examples/docker/README.md) file.
 
+## AI Review Workflow
+
+Read about it in the [examples/ai-review/README.md](examples/ai-review/README.md) file.
+
 
 ## License
 
