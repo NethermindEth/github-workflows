@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/NethermindEth/github-workflows/compare/v2.1.0...v2.2.0) (2026-08-24)
+
+
+### Features
+
+* add reusable AI PR review workflows ([#163](https://github.com/NethermindEth/github-workflows/issues/163)) ([caf5d60](https://github.com/NethermindEth/github-workflows/commit/caf5d60f422267bc95f63b614b70d8b8cf4bc69f))
+
 ## [2.1.0](https://github.com/NethermindEth/github-workflows/compare/v2.0.2...v2.1.0) (2026-08-20)
 
 
