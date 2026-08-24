@@ -54,7 +54,22 @@ jobs:
 ```
 
 `model`, `fallback_model`, `extra_instructions`, and `num_max_findings` all have sane defaults --
-override only the ones you need.
+override only the ones you need. Default `model` is `openai/internal/default`, i.e. the gateway's
+own internal default model (see [`ai-review.yaml`](../../.github/workflows/ai-review.yaml) for the
+current default). Keep the `openai/` prefix on any override -- litellm needs it to route through
+the gateway (`OPENAI.API_BASE`) instead of trying to call another provider's API directly:
+
+```yaml
+jobs:
+  ai-review:
+    uses: NethermindEth/github-workflows/.github/workflows/ai-review.yaml@stable
+    with:
+      model: openai/anthropic/claude-sonnet-5
+      fallback_model: openai/internal/default
+    secrets:
+      infisical_identity_id: ${{ secrets.INFISICAL_IDENTITY_ID }}
+      infisical_project_id: ${{ secrets.INFISICAL_PROJECT_ID }}
+```
 
 The `concurrency` block above is **your responsibility to declare**, not the reusable workflow's:
 concurrency groups are scoped per-repository, not per-workflow-file, so if the reusable workflow
