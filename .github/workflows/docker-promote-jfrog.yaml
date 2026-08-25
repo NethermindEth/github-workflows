@@ -137,7 +137,10 @@ jobs:
             target_image="${TARGET_IMAGE}:${TAG}"
             echo "Promoting ${source_image} to ${target_image}"
 
-            oras cp -r ${source_image} ${target_image}
+            # No -r: it walks the OCI Referrers API, which nethermind.jfrog.io
+            # answers 403 (GET /v2/<repo>/referrers/<digest>), failing every promote.
+            # The Attest step below re-attests the target, so provenance is preserved.
+            oras cp ${source_image} ${target_image}
 
             # Get image digest and add it to the subject.checksums.txt file
             DIGEST=$(docker buildx imagetools inspect "${target_image}" --raw | sha256sum | cut -d' ' -f1)
