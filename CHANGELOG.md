@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2](https://github.com/NethermindEth/github-workflows/compare/v2.2.1...v2.2.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* **docker-promote-jfrog:** drop oras cp -r, JFrog 403s the Referrers API ([#167](https://github.com/NethermindEth/github-workflows/issues/167)) ([f2d3cb3](https://github.com/NethermindEth/github-workflows/commit/f2d3cb3f2610913e638e0fb6c17e1bf16d79c08e))
+
 ## [2.2.1](https://github.com/NethermindEth/github-workflows/compare/v2.2.0...v2.2.1) (2026-08-25)
 
 
