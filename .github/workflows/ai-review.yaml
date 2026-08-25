@@ -99,9 +99,12 @@ jobs:
         with:
           persist-credentials: false
 
-      # Loads the org LiteLLM gateway credentials. Exports LLM_API_KEY and LLM_BASE_URL into the
-      # job env. Skipped for the configured skip_actor (e.g. Dependabot only gets Dependabot
-      # secrets, so the two Infisical ids would arrive empty and fail the whole job).
+      # Loads the org LiteLLM gateway credentials. The secret's key name is NOT consistent across
+      # Infisical paths: the shared /apps/litellm/code-reviewer-prod folder names it
+      # LITELLM_API_KEY, while a per-repo /github/workflows/<repo> folder (citizen-automations'
+      # convention) names it LLM_API_KEY -- OPENAI.KEY below tries both so either layout works.
+      # Skipped for the configured skip_actor (e.g. Dependabot only gets Dependabot secrets, so
+      # the two Infisical ids would arrive empty and fail the whole job).
       - name: Load gateway secrets from Infisical
         if: github.actor != inputs.skip_actor
         # Full owner/repo reference, not a relative path: a reusable workflow called from a
@@ -132,7 +135,7 @@ jobs:
         timeout-minutes: 20
         uses: the-pr-agent/pr-agent@f6af7d77554ff8d26adffded077e6461329e92fa # v0.42.0
         env:
-          OPENAI.KEY: ${{ env.LLM_API_KEY }}
+          OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AGENT_CONFIG_BRANCH: ${{ github.base_ref }}
           OPENAI.API_BASE: "https://litellm.nethermind.dev/v1" # non-secret; KEY comes from above

@@ -8,8 +8,13 @@ pattern running in `citizen-automations` today.
 
 1. **Org secrets** on the consuming repo (or org-wide): `INFISICAL_IDENTITY_ID`,
    `INFISICAL_PROJECT_ID`.
-2. **Infisical**: store `LLM_API_KEY` and `LLM_BASE_URL` at `/github/workflows/<your-repo-name>`
-   in the environment you pass as `env_slug` (default `prod`).
+2. **Infisical**: either use the shared gateway credential at `/apps/litellm/code-reviewer-prod`
+   (key `LITELLM_API_KEY`, project `angkor-ai-platform`) by passing `secret_path:
+   /apps/litellm/code-reviewer-prod`, or store your own `LLM_API_KEY` at
+   `/github/workflows/<your-repo-name>` (the default `secret_path`) in the environment you pass
+   as `env_slug` (default `prod`). The gateway API base is hardcoded in the workflow
+   (`https://litellm.nethermind.dev/v1`), not read from Infisical, so `LLM_BASE_URL` isn't needed
+   either way. `OPENAI.KEY` tries `LITELLM_API_KEY` then `LLM_API_KEY`, so either naming works.
 3. **Label**: create a `needs-human-review` label on the repo (or pass a different `label` input).
 4. Add the required status check in branch protection on your default branch. **The check name is
    `<your-job-id> / ai-review`, not `ai-review`** -- GitHub prefixes a reusable-workflow job's
