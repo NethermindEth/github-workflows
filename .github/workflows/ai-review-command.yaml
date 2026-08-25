@@ -78,7 +78,7 @@ jobs:
         # Full owner/repo reference, not a relative path: a reusable workflow called from a
         # DIFFERENT repo resolves "./x" against the CALLER's checkout, not this repo, so a
         # relative path here would silently fail to resolve for every external caller.
-        uses: NethermindEth/github-workflows/get_infisical_secrets@ca96f54d1f0d4b09a2c266b4619402d48d376103
+        uses: NethermindEth/github-workflows/get_infisical_secrets@eaf84a67460c32463a94a333f1439b43133f6182
         with:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
@@ -106,7 +106,7 @@ jobs:
       # These env vars WIN over a repo-local .pr_agent.toml for any key they both set (confirmed
       # empirically, AUT-427) -- use the workflow inputs for overrides, not a toml.
       - name: PR-Agent -- run the commented command
-        uses: the-pr-agent/pr-agent@f6af7d77554ff8d26adffded077e6461329e92fa # v0.42.0
+        uses: the-pr-agent/pr-agent@4ebd5c5333c6ef21509e7304d27969eb825e6f22 # v0.43.0
         env:
           OPENAI.KEY: ${{ env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
