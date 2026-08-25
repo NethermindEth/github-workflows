@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/NethermindEth/github-workflows/compare/v2.2.0...v2.2.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **ai-review:** accept LITELLM_API_KEY as fallback for OPENAI.KEY ([#168](https://github.com/NethermindEth/github-workflows/issues/168)) ([ca81e8c](https://github.com/NethermindEth/github-workflows/commit/ca81e8c4ab98dead155ca486464b9774f13af861))
+* **deps:** bump the all-github-actions group with 2 updates ([#166](https://github.com/NethermindEth/github-workflows/issues/166)) ([6ec3a0e](https://github.com/NethermindEth/github-workflows/commit/6ec3a0edbf722e8721689091b05020dccf480c1b))
+
 ## [2.2.0](https://github.com/NethermindEth/github-workflows/compare/v2.1.0...v2.2.0) (2026-08-24)
 
 
