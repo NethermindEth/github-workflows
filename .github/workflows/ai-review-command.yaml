@@ -105,10 +105,13 @@ jobs:
       # CONFIG.TEMPERATURE this would call the real OpenAI API with a gateway key and fail auth.
       # These env vars WIN over a repo-local .pr_agent.toml for any key they both set (confirmed
       # empirically, AUT-427) -- use the workflow inputs for overrides, not a toml.
+      # OPENAI.KEY tries both key names Infisical uses across different secret paths: the shared
+      # /apps/litellm/code-reviewer-prod folder names it LITELLM_API_KEY, a per-repo
+      # /github/workflows/<repo> folder (citizen-automations' convention) names it LLM_API_KEY.
       - name: PR-Agent -- run the commented command
         uses: the-pr-agent/pr-agent@f6af7d77554ff8d26adffded077e6461329e92fa # v0.42.0
         env:
-          OPENAI.KEY: ${{ env.LLM_API_KEY }}
+          OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AGENT_CONFIG_BRANCH: ${{ steps.pr_base.outputs.base_ref }}
           OPENAI.API_BASE: "https://litellm.nethermind.dev/v1" # non-secret; KEY comes from above
