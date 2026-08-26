@@ -22,10 +22,19 @@ on:
         # provided". "openai/" is what routes through OPENAI.API_BASE (our gateway) below --
         # dropping the prefix, or using another provider's own prefix (e.g. "gemini/"), makes
         # litellm try to call that provider's real API directly, bypassing the gateway entirely.
+        #
+        # TEMP DIAGNOSTIC (2026-08-26): pointed at internal/ai-review, not internal/default.
+        # Same backend, but the gateway sets max_parallel_requests: 1 on this alias -- PR-Agent
+        # runs its describe/review sub-calls concurrently (async_ai_calls, max_ai_calls: 4), and
+        # a slow ai-review run showed 2-4 concurrent requests to the box for its whole 10min+
+        # duration. This forces the gateway to serialize calls, to test whether GPU contention
+        # (not the LLM being genuinely stuck) is driving the multi-minute-plus generations.
+        # Revert to "openai/internal/default" once the test has an answer (argocd repo also has
+        # a matching revert: drop the internal/ai-review model_list entry).
         description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix)"
         type: string
         required: false
-        default: "openai/internal/default"
+        default: "openai/internal/ai-review"
       fallback_model:
         # Same "openai/" prefix requirement as `model` above -- see that comment.
         description: "Gateway fallback model if the primary model call fails (keep the openai/ prefix)"
