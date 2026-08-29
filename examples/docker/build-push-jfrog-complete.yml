@@ -56,3 +56,11 @@ jobs:
       docker_build_args: ""
       ignore_trivy: false
       run_trivy: true
+
+      # Image signing (JFrog Evidence) — on by default
+      sign_image: true
+      signing_key_alias: "jfrog-evidence-image-signing"
+      predicate_type: "https://jfrog.com/evidence/signature/v1"
+    secrets:
+      infisical_identity_id: ${{ secrets.INFISICAL_IDENTITY_ID }}
+      infisical_project_id: ${{ secrets.INFISICAL_PROJECT_ID }}
