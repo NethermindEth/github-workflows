@@ -183,7 +183,7 @@ jobs:
         # APITimeoutError and the litellm/OpenAI-client inner retries are pinned to 0 — so the
         # fallback model actually gets tried. Owning the pin also means the code running with
         # our gateway key is ours to read and change, not a third party's SHA.
-        uses: NethermindEth/pr-agent@85c5e6be6fa0600fca907831babeaae6f15a1eb2 # v0.43.0 + configurable timeout-to-fallback
+        uses: NethermindEth/pr-agent@2aa3a7da3ff45a9e95c05750702b88143bad0a73 # v0.43.0 + configurable timeout-to-fallback (branch nethermind-pin-v0.43.0)
         env:
           OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
