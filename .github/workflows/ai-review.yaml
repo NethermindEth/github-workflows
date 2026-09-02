@@ -22,10 +22,14 @@ on:
         # provided". "openai/" is what routes through OPENAI.API_BASE (our gateway) below --
         # dropping the prefix, or using another provider's own prefix (e.g. "gemini/"), makes
         # litellm try to call that provider's real API directly, bypassing the gateway entirely.
-        description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix)"
+        description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix). Empty = pick by diff size, see the select-model step"
         type: string
         required: false
-        default: "openai/internal/default"
+        # Empty means size-based selection (the "Select model by diff size" step below):
+        # internal/default (thinking mode, the better reviewer) up to the calibrated diff-size
+        # threshold, internal/default-fast (same Qwen backend, thinking off) above it. A
+        # caller passing an explicit model here opts out of the selection entirely.
+        default: ""
       fallback_model:
         # Same "openai/" prefix requirement as `model` above -- see that comment.
         description: "Gateway fallback model if the primary model call fails (keep the openai/ prefix)"
@@ -117,6 +121,47 @@ jobs:
           env-slug: ${{ inputs.env_slug }}
           secret-path: ${{ inputs.secret_path }}
 
+      # Picks the model from the PR's diff size unless the caller pinned one. Thinking mode
+      # (internal/default) reviews better but its e2e latency grows with prompt size past
+      # pr-agent's 150s ai_timeout, and pr-agent's stacked silent retries then burn the whole
+      # 20-minute step budget without ever reaching the fallback model (AUT-495). Calibrated
+      # from the two production runs that exposed this, both measured as `gh pr diff` bytes
+      # against pr-agent's own token count of the same diff (~3.0 bytes/token, consistent
+      # across both):
+      #
+      #   access-policy#24    29,310 B (~10.2k tokens)  ->  ~125s, PASSED
+      #   access-gateway#84   61,834 B (~20.3k tokens)  ->  >150s, hung both runs
+      #
+      # 25,000 B (~8.5k tokens, ~550 diff lines) keeps a margin under the known-good point,
+      # whose own headroom was only 17% — GPU load moves the curve (the retry storm in
+      # AUT-495 measurably pushed it). Raise or lower HERE, with a datapoint, not by feel.
+      #
+      # The diff is untrusted PR content: it flows only into `wc -c`, never through a shell
+      # expansion or eval, and the chosen model name is one of two literals from this file.
+      - name: Select model by diff size
+        id: select_model
+        if: github.actor != inputs.skip_actor
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPLICIT_MODEL: ${{ inputs.model }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DIFF_BYTES_THRESHOLD: "25000"
+        run: |
+          set -euo pipefail
+          if [ -n "${EXPLICIT_MODEL}" ]; then
+            echo "model=${EXPLICIT_MODEL}" >> "$GITHUB_OUTPUT"
+            echo "Caller pinned model: ${EXPLICIT_MODEL}"
+            exit 0
+          fi
+          bytes=$(gh pr diff "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" | wc -c | tr -d ' ')
+          if [ "${bytes}" -le "${DIFF_BYTES_THRESHOLD}" ]; then
+            model="openai/internal/default"
+          else
+            model="openai/internal/default-fast"
+          fi
+          echo "model=${model}" >> "$GITHUB_OUTPUT"
+          echo "Diff is ${bytes} bytes (threshold ${DIFF_BYTES_THRESHOLD}): using ${model}"
+
       # Runs /review + /describe (and /improve on demand via the command workflow). No
       # .pr_agent.toml is required in the caller repo -- every setting PR-Agent needs is passed as
       # an env var (its config loader accepts literal SECTION.KEY names, e.g. OPENAI.KEY below).
@@ -139,7 +184,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AGENT_CONFIG_BRANCH: ${{ github.base_ref }}
           OPENAI.API_BASE: "https://litellm.nethermind.dev/v1" # non-secret; KEY comes from above
-          CONFIG.MODEL: ${{ inputs.model }}
+          CONFIG.MODEL: ${{ steps.select_model.outputs.model }}
           CONFIG.FALLBACK_MODELS: '["${{ inputs.fallback_model }}"]'
           CONFIG.CUSTOM_MODEL_MAX_TOKENS: "200000"
           CONFIG.MAX_MODEL_TOKENS: "128000" # raise the 32000 default so large PRs aren't truncated
