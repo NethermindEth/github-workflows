@@ -27,8 +27,8 @@ on:
         required: false
         # Empty means size-based selection (the "Select model by diff size" step below):
         # internal/default (thinking mode, the better reviewer) up to the calibrated diff-size
-        # threshold, internal/default-fast (same Qwen backend, thinking off) above it. A
-        # caller passing an explicit model here opts out of the selection entirely.
+        # threshold, gemini-pro-latest (strong long-context, via the gateway's gemini/* route)
+        # above it. A caller passing an explicit model here opts out of the selection entirely.
         default: ""
       fallback_model:
         # Same "openai/" prefix requirement as `model` above -- see that comment.
@@ -124,10 +124,12 @@ jobs:
       # Picks the model from the PR's diff size unless the caller pinned one. Thinking mode
       # (internal/default) reviews better but its e2e latency grows with prompt size past
       # pr-agent's 150s ai_timeout, and pr-agent's stacked silent retries then burn the whole
-      # 20-minute step budget without ever reaching the fallback model (AUT-495). Calibrated
-      # from the two production runs that exposed this, both measured as `gh pr diff` bytes
-      # against pr-agent's own token count of the same diff (~3.0 bytes/token, consistent
-      # across both):
+      # 20-minute step budget without ever reaching the fallback model (AUT-495). Above the
+      # threshold the review goes to gemini-pro-latest through the gateway (the litellm
+      # gemini/* route) — big diffs get a strong long-context model instead of the
+      # thinking-off Qwen. Calibrated from the two production runs that exposed this, both
+      # measured as `gh pr diff` bytes against pr-agent's own token count of the same diff
+      # (~3.0 bytes/token, consistent across both):
       #
       #   access-policy#24    29,310 B (~10.2k tokens)  ->  ~125s, PASSED
       #   access-gateway#84   61,834 B (~20.3k tokens)  ->  >150s, hung both runs
@@ -157,7 +159,7 @@ jobs:
           if [ "${bytes}" -le "${DIFF_BYTES_THRESHOLD}" ]; then
             model="openai/internal/default"
           else
-            model="openai/internal/default-fast"
+            model="openai/gemini/gemini-pro-latest"
           fi
           echo "model=${model}" >> "$GITHUB_OUTPUT"
           echo "Diff is ${bytes} bytes (threshold ${DIFF_BYTES_THRESHOLD}): using ${model}"
