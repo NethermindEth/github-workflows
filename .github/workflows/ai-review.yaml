@@ -178,7 +178,12 @@ jobs:
         if: github.actor != inputs.skip_actor
         continue-on-error: false
         timeout-minutes: 20
-        uses: the-pr-agent/pr-agent@4ebd5c5333c6ef21509e7304d27969eb825e6f22 # v0.43.0
+        # Our fork of the same upstream commit (v0.43.0) plus the timeout-to-fallback fix
+        # (AUT-495): a timed-out call no longer replays on the same model — tenacity excludes
+        # APITimeoutError and the litellm/OpenAI-client inner retries are pinned to 0 — so the
+        # fallback model actually gets tried. Owning the pin also means the code running with
+        # our gateway key is ours to read and change, not a third party's SHA.
+        uses: NethermindEth/pr-agent@f88eccab966c2f6ca06c22db01d1670f8783578b # v0.43.0 + timeout fix
         env:
           OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
