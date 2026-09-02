@@ -183,7 +183,7 @@ jobs:
         # APITimeoutError and the litellm/OpenAI-client inner retries are pinned to 0 — so the
         # fallback model actually gets tried. Owning the pin also means the code running with
         # our gateway key is ours to read and change, not a third party's SHA.
-        uses: NethermindEth/pr-agent@f88eccab966c2f6ca06c22db01d1670f8783578b # v0.43.0 + timeout fix
+        uses: NethermindEth/pr-agent@85c5e6be6fa0600fca907831babeaae6f15a1eb2 # v0.43.0 + configurable timeout-to-fallback
         env:
           OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -191,6 +191,12 @@ jobs:
           OPENAI.API_BASE: "https://litellm.nethermind.dev/v1" # non-secret; KEY comes from above
           CONFIG.MODEL: ${{ steps.select_model.outputs.model }}
           CONFIG.FALLBACK_MODELS: '["${{ inputs.fallback_model }}"]'
+          # Fail over on timeout instead of replaying the primary (AUT-495). Both settings
+          # exist in our pr-agent fork (pinned above) with upstream-preserving defaults, so
+          # the policy lives here: no same-model retry after a timeout, no hidden retries
+          # inside the completion client. Worst case per model = one ai_timeout.
+          CONFIG.RETRY_SAME_MODEL_ON_TIMEOUT: "false"
+          CONFIG.NUM_RETRIES: "0"
           CONFIG.CUSTOM_MODEL_MAX_TOKENS: "200000"
           CONFIG.MAX_MODEL_TOKENS: "128000" # raise the 32000 default so large PRs aren't truncated
           # MUST stay explicit: PR-Agent's own default is 0.2, which the gateway rejects
