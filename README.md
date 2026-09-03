@@ -52,6 +52,10 @@ Read about it in the [examples/docker/README.md](examples/docker/README.md) file
 
 Read about it in the [examples/ai-review/README.md](examples/ai-review/README.md) file.
 
+## Production-Ready Agent Release Gate
+
+Read about it in the [examples/agent-release-gate/README.md](examples/agent-release-gate/README.md) file.
+
 
 ## License
 
