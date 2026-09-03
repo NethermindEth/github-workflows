@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.0](https://github.com/NethermindEth/github-workflows/compare/v2.2.2...v2.3.0) (2026-09-02)
+
+
+### Features
+
+* **ai-review:** select model by diff size instead of flat fast switch ([#174](https://github.com/NethermindEth/github-workflows/issues/174)) ([a9b6e76](https://github.com/NethermindEth/github-workflows/commit/a9b6e76abc4511039a7eb99354ddd6439ef08fa3))
+
+
+### Bug Fixes
+
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets ([1de33d6](https://github.com/NethermindEth/github-workflows/commit/1de33d6f4ceb48666b3d9929314a2244531880a6))
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets from 2.1.0 to 2.2.2 in the all-github-actions group ([#172](https://github.com/NethermindEth/github-workflows/issues/172)) ([1de33d6](https://github.com/NethermindEth/github-workflows/commit/1de33d6f4ceb48666b3d9929314a2244531880a6))
+
 ## [2.2.2](https://github.com/NethermindEth/github-workflows/compare/v2.2.1...v2.2.2) (2026-08-25)
 
 
