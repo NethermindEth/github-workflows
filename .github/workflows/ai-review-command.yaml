@@ -78,7 +78,7 @@ jobs:
         # Full owner/repo reference, not a relative path: a reusable workflow called from a
         # DIFFERENT repo resolves "./x" against the CALLER's checkout, not this repo, so a
         # relative path here would silently fail to resolve for every external caller.
-        uses: NethermindEth/github-workflows/get_infisical_secrets@4fba7597607cbac9de0c448403ead6bfcda72273
+        uses: NethermindEth/github-workflows/get_infisical_secrets@80ac29b7f614d73430a6936cc5ea85c68f45ed20
         with:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
@@ -109,7 +109,7 @@ jobs:
       # /apps/litellm/code-reviewer-prod folder names it LITELLM_API_KEY, a per-repo
       # /github/workflows/<repo> folder (citizen-automations' convention) names it LLM_API_KEY.
       - name: PR-Agent -- run the commented command
-        uses: the-pr-agent/pr-agent@4ebd5c5333c6ef21509e7304d27969eb825e6f22 # v0.43.0
+        uses: the-pr-agent/pr-agent@f3b385ea2927247ddcff2fe252472380b9c8f5fc # v0.45.0
         env:
           OPENAI.KEY: ${{ env.LITELLM_API_KEY || env.LLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
