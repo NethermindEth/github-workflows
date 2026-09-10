@@ -111,9 +111,35 @@ on:
         required: false
         type: boolean
         default: true
+      cache_from:
+        description: "BuildKit cache sources passed to the build (e.g. type=gha). Set to an empty string to disable the layer cache, for builds whose stages pull private images or consume secrets."
+        required: false
+        type: string
+        default: "type=gha"
+      cache_to:
+        description: "BuildKit cache export passed to the build (e.g. type=gha,mode=max). Set to an empty string to disable."
+        required: false
+        type: string
+        default: "type=gha,mode=max"
+      infisical_env_slug:
+        description: "Infisical environment slug (dev, staging, prod) to load build secrets from. Requires infisical_secret_path and the infisical_* secrets."
+        required: false
+        type: string
+        default: ""
+      infisical_secret_path:
+        description: "Infisical secret path whose secrets are exported into the job environment before the build (masked), so docker_secret_envs can name them (e.g. my_key=MY_SECRET). Empty disables the step."
+        required: false
+        type: string
+        default: ""
     secrets:
       git_token:
         description: "Git token to use for checkout"
+        required: false
+      infisical_identity_id:
+        description: "Infisical machine identity ID (OIDC auth). Only used when infisical_secret_path is set."
+        required: false
+      infisical_project_id:
+        description: "Infisical project ID. Only used when infisical_secret_path is set."
         required: false
 
 permissions:
@@ -172,6 +198,18 @@ jobs:
           username: ${{ steps.jfrog.outputs.oidc-user }}
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
+      # Build-time secrets from Infisical. Exported into the job environment (every value
+      # masked) so the caller's docker_secret_envs can hand them to BuildKit as secret mounts.
+      # Same OIDC-to-Infisical action ai-review.yaml uses; nothing long-lived is stored.
+      - name: Load build secrets from Infisical
+        if: ${{ inputs.infisical_secret_path != '' }}
+        uses: NethermindEth/github-workflows/get_infisical_secrets@80ac29b7f614d73430a6936cc5ea85c68f45ed20
+        with:
+          identity-id: ${{ secrets.infisical_identity_id }}
+          project-id: ${{ secrets.infisical_project_id }}
+          env-slug: ${{ inputs.infisical_env_slug }}
+          secret-path: ${{ inputs.infisical_secret_path }}
+
       - name: Run pre-build script
         if: ${{ inputs.pre_build_script != '' }}
         env:
@@ -202,3 +240,5 @@ jobs:
           build-args: ${{ inputs.docker_build_args }}
           ignore_trivy: ${{ inputs.ignore_trivy }}
           run_trivy: ${{ inputs.run_trivy }}
+          cache_from: ${{ inputs.cache_from }}
+          cache_to: ${{ inputs.cache_to }}

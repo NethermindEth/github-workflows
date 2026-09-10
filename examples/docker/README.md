@@ -18,6 +18,18 @@ The workflow for building and publishing Docker images to JFrog Artifactory.
 
 **Simple Example:** [`examples/docker/build-push-jfrog-simple.yml`](./build-push-jfrog-simple.yml)
 **Complete Example:** [`examples/docker/build-push-jfrog-complete.yml`](./build-push-jfrog-complete.yml)
+**Build secrets from Infisical:** [`examples/docker/build-push-jfrog-infisical-secrets.yml`](./build-push-jfrog-infisical-secrets.yml)
+
+#### Build-time secrets from Infisical
+
+Set `infisical_env_slug` and `infisical_secret_path` and pass the `infisical_identity_id` /
+`infisical_project_id` secrets. The workflow loads that path over GitHub OIDC (values masked)
+before the build, so `docker_secret_envs` can name the exported variables and BuildKit receives
+them as `--mount=type=secret` in the Dockerfile. Nothing lands in a layer or in the build args.
+
+Builds whose stages `FROM` a private registry image, or that consume a secret, should also set
+`cache_from: ""` and `cache_to: ""`: the default `type=gha,mode=max` exports every stage's layers
+into the repository's Actions cache, which any workflow run in the repository can restore.
 
 
 ### Docker Hub
