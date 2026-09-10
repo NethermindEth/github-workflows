@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.4.0](https://github.com/NethermindEth/github-workflows/compare/v2.3.0...v2.4.0) (2026-09-10)
+
+
+### Features
+
+* **docker-build-push-jfrog:** add infisical + cache inputs ([#178](https://github.com/NethermindEth/github-workflows/issues/178)) ([20fe7f3](https://github.com/NethermindEth/github-workflows/commit/20fe7f37ca1686e58d99fc736d461618063920b3))
+
+
+### Bug Fixes
+
+* **deps:** bump the all-github-actions group with 2 updates ([#176](https://github.com/NethermindEth/github-workflows/issues/176)) ([7bc4998](https://github.com/NethermindEth/github-workflows/commit/7bc49987a834be61f28484652ff9a20356360e11))
+
 ## [2.3.0](https://github.com/NethermindEth/github-workflows/compare/v2.2.2...v2.3.0) (2026-09-02)
 
 
