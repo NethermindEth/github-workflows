@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.1](https://github.com/NethermindEth/github-workflows/compare/v2.4.0...v2.4.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets ([9a86635](https://github.com/NethermindEth/github-workflows/commit/9a86635752324ec83791911cd892a5b04bc4b3d6))
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets from 2.3.0 to 2.4.0 in the all-github-actions group ([#179](https://github.com/NethermindEth/github-workflows/issues/179)) ([9a86635](https://github.com/NethermindEth/github-workflows/commit/9a86635752324ec83791911cd892a5b04bc4b3d6))
+
 ## [2.4.0](https://github.com/NethermindEth/github-workflows/compare/v2.3.0...v2.4.0) (2026-09-10)
 
 
