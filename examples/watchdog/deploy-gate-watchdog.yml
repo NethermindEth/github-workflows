@@ -1,0 +1,23 @@
+name: Deploy gate watchdog
+
+on:
+  schedule:
+    # Hourly, at a minute nobody else picked. Scheduled workflows run on the default
+    # branch only, which is the branch this is watching anyway.
+    - cron: "17 * * * *"
+  # Handy for checking the wiring without waiting an hour. It can create, comment on and
+  # close this repository's issues, and nothing else, so the worst a repository writer can
+  # do with it is file an issue they could have filed by hand.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+jobs:
+  watchdog:
+    uses: NethermindEth/github-workflows/.github/workflows/actions-watchdog-deploy-gate.yaml@stable
+    with:
+      # The file name of the workflow that publishes the image, not its display name.
+      workflow_file: build-images.yaml

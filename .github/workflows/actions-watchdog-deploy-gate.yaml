@@ -1,0 +1,207 @@
+name: Deploy gate watchdog
+
+# A "deploy gate" is the workflow whose success is what actually publishes an artifact:
+# docker-build-push-jfrog and friends. When that gate goes red on the release branch,
+# nothing is pushed, the deployer has nothing new to sync, and production quietly keeps
+# serving the last image that made it through. Nothing in GitHub makes that loud — a red
+# run on the default branch is a grey cross in a commit list nobody is watching — so the
+# branch can sit unshipped for days while looking merged and done.
+#
+# This workflow asks the only question that matters, on a schedule: is the head of the
+# release branch represented by a *successful* run of the gate? If not, it files one
+# deduplicated issue and fails, and it closes that issue again when the branch ships.
+#
+# It is deliberately a watchdog rather than an on-failure hook. A hook is a strictly
+# weaker signal: it can only fire when the gate ran and lost. It cannot fire when the
+# gate never ran at all — workflow disabled, trigger deleted, runner outage, a push that
+# matched no path filter — and those are the failures that stay hidden longest.
+
+on:
+  workflow_call:
+    inputs:
+      workflow_file:
+        description: "File name of the gating workflow, e.g. build-images.yaml. The file name rather than the display name, so renaming the workflow's `name:` cannot silently detach the watchdog."
+        type: string
+        required: true
+      branch:
+        description: "Branch whose head must be shipped."
+        type: string
+        required: false
+        default: "main"
+      grace_minutes:
+        description: "How long a commit may go unshipped before it counts as stale. Must cover a normal end-to-end run of the gate, or every push trips the watchdog while it is still building."
+        type: number
+        required: false
+        default: 90
+      issue_label:
+        description: "Label used to find and deduplicate the watchdog's issue. One open issue per label, reused across consecutive failures."
+        type: string
+        required: false
+        default: "deploy-gate-stale"
+      issue_assignees:
+        description: "Comma-separated GitHub usernames to assign the issue to. Empty leaves it unassigned."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  # Reading workflow run history is the whole check; writing issues is the whole alert.
+  actions: read
+  issues: write
+
+jobs:
+  watchdog:
+    name: Check deploy gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check gate freshness
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          INPUT_WORKFLOW_FILE: ${{ inputs.workflow_file }}
+          INPUT_BRANCH: ${{ inputs.branch }}
+          INPUT_GRACE_MINUTES: ${{ inputs.grace_minutes }}
+          INPUT_ISSUE_LABEL: ${{ inputs.issue_label }}
+          INPUT_ISSUE_ASSIGNEES: ${{ inputs.issue_assignees }}
+        run: |
+          set -euo pipefail
+
+          # Exit codes are distinct so the tests can assert *which* thing happened rather
+          # than only "non-zero": 0 shipped or still inside the grace window, 1 stale,
+          # 2 called with arguments this cannot act on.
+          die() { echo "::error::$*"; exit 2; }
+          summary() { echo "$*" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
+
+          # Validate before touching the API. Allowlists, not blocklists: every one of
+          # these values is interpolated into a REST path, a query string or a gh
+          # argument, and "reject what looks wrong" is how a traversal or an injected
+          # query parameter gets through.
+          [[ "${INPUT_WORKFLOW_FILE}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.(yml|yaml)$ ]] ||
+            die "workflow_file must be a workflow file name such as build-images.yaml, got: ${INPUT_WORKFLOW_FILE}"
+          [[ "${INPUT_BRANCH}" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] ||
+            die "branch must be a plain branch name, got: ${INPUT_BRANCH}"
+          [[ "${INPUT_GRACE_MINUTES}" =~ ^[0-9]+$ ]] ||
+            die "grace_minutes must be a non-negative integer, got: ${INPUT_GRACE_MINUTES}"
+          [[ "${INPUT_ISSUE_LABEL}" =~ ^[A-Za-z0-9][A-Za-z0-9._:-]{0,48}$ ]] ||
+            die "issue_label must be 1-49 characters of [A-Za-z0-9._:-], got: ${INPUT_ISSUE_LABEL}"
+          [[ "${INPUT_ISSUE_ASSIGNEES}" =~ ^([A-Za-z0-9-]+(,[A-Za-z0-9-]+)*)?$ ]] ||
+            die "issue_assignees must be comma-separated GitHub usernames, got: ${INPUT_ISSUE_ASSIGNEES}"
+
+          work="$(mktemp -d)"
+
+          # --- observe -------------------------------------------------------------
+
+          gh api "repos/${REPO}/commits/${INPUT_BRANCH}" > "${work}/head.json"
+          head_sha="$(jq -r '.sha' "${work}/head.json")"
+          head_date="$(jq -r '.commit.committer.date' "${work}/head.json")"
+
+          # `status` on this endpoint takes conclusions as well as statuses, so
+          # status=success means "concluded successfully". Worth knowing: an unrecognised
+          # value there returns an empty list rather than a 4xx, so if that enum ever
+          # changes under us this reports a stale branch instead of silently reporting a
+          # healthy one. Wrong in the direction that gets looked at.
+          gh api "repos/${REPO}/actions/workflows/${INPUT_WORKFLOW_FILE}/runs?branch=${INPUT_BRANCH}&status=success&per_page=1" \
+            > "${work}/last_ok.json"
+          last_ok_sha="$(jq -r '.workflow_runs[0].head_sha // ""' "${work}/last_ok.json")"
+          last_ok_url="$(jq -r '.workflow_runs[0].html_url // ""' "${work}/last_ok.json")"
+
+          echo "branch head:       ${head_sha} (${head_date})"
+          echo "last shipped head: ${last_ok_sha:-<none on record>}"
+
+          # `gh issue list --label` errors on a label that does not exist yet rather than
+          # returning an empty list, so the label is created first. Already-exists is the
+          # normal case and is not a failure.
+          gh label create "${INPUT_ISSUE_LABEL}" --repo "${REPO}" --color B60205 \
+            --description "Release branch is not represented by a successful deploy gate run" \
+            >/dev/null 2>&1 || true
+
+          issue="$(gh issue list --repo "${REPO}" --label "${INPUT_ISSUE_LABEL}" \
+            --state open --limit 1 --json number --jq '.[0].number // empty')"
+
+          # --- shipped: close anything the watchdog opened earlier -------------------
+
+          if [[ -n "${last_ok_sha}" && "${last_ok_sha}" == "${head_sha}" ]]; then
+            echo "gate is current"
+            summary "### Deploy gate current"
+            summary "\`${INPUT_BRANCH}\` head \`${head_sha}\` shipped by [${INPUT_WORKFLOW_FILE}](${last_ok_url})."
+
+            if [[ -n "${issue}" ]]; then
+              # shellcheck disable=SC2016  # backticks here are markdown code spans
+              {
+                printf 'Recovered. `%s` head `%s` was shipped by [%s](%s).\n\n' \
+                  "${INPUT_BRANCH}" "${head_sha}" "${INPUT_WORKFLOW_FILE}" "${last_ok_url}"
+                printf 'Closed by the [deploy gate watchdog](%s).\n' "${RUN_URL}"
+              } > "${work}/recovered.md"
+              gh issue comment "${issue}" --repo "${REPO}" --body-file "${work}/recovered.md"
+              gh issue close "${issue}" --repo "${REPO}" --reason completed
+              echo "closed issue #${issue}"
+            fi
+            exit 0
+          fi
+
+          # --- unshipped, but possibly still building -------------------------------
+
+          # python3 rather than `date -d`: the same parse then works on a developer's
+          # macOS while running the tests, so the tested code and the shipped code are
+          # not two different implementations.
+          head_epoch="$(python3 -c 'import datetime, sys; print(int(datetime.datetime.strptime(sys.argv[1], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc).timestamp()))' "${head_date}")"
+          age_minutes=$(( ( $(date -u +%s) - head_epoch ) / 60 ))
+
+          if (( age_minutes < INPUT_GRACE_MINUTES )); then
+            echo "head is ${age_minutes}m old, inside the ${INPUT_GRACE_MINUTES}m grace window"
+            summary "### Deploy gate pending"
+            summary "\`${head_sha}\` is ${age_minutes}m old, inside the ${INPUT_GRACE_MINUTES}m grace window."
+            exit 0
+          fi
+
+          # --- stale ---------------------------------------------------------------
+
+          gh api "repos/${REPO}/actions/workflows/${INPUT_WORKFLOW_FILE}/runs?head_sha=${head_sha}&per_page=1" \
+            > "${work}/head_run.json"
+          run_status="$(jq -r '.workflow_runs[0].status // "never ran"' "${work}/head_run.json")"
+          run_conclusion="$(jq -r '.workflow_runs[0].conclusion // "none"' "${work}/head_run.json")"
+          gate_run_url="$(jq -r '.workflow_runs[0].html_url // ""' "${work}/head_run.json")"
+
+          # shellcheck disable=SC2016  # backticks here are markdown code spans
+          {
+            printf '`%s` is at `%s`, committed %s minutes ago, and no successful run of `%s` has that commit as its head. Whatever consumes this gate is still serving the previous artifact.\n\n' \
+              "${INPUT_BRANCH}" "${head_sha}" "${age_minutes}" "${INPUT_WORKFLOW_FILE}"
+            printf '| | |\n|---|---|\n'
+            printf '| Branch head | `%s` |\n' "${head_sha}"
+            printf '| Head commit age | %s minutes |\n' "${age_minutes}"
+            printf '| Gate run for that head | %s / %s %s |\n' "${run_status}" "${run_conclusion}" "${gate_run_url}"
+            printf '| Last head that shipped | %s %s |\n\n' "${last_ok_sha:-none on record}" "${last_ok_url}"
+            printf 'Filed by the [deploy gate watchdog](%s). It closes this issue by itself once `%s` ships again.\n' \
+              "${RUN_URL}" "${INPUT_BRANCH}"
+          } > "${work}/stale.md"
+
+          if [[ -z "${issue}" ]]; then
+            assignees=()
+            if [[ -n "${INPUT_ISSUE_ASSIGNEES}" ]]; then
+              assignees=(--assignee "${INPUT_ISSUE_ASSIGNEES}")
+            fi
+            gh issue create --repo "${REPO}" \
+              --title "Deploy gate stale: ${INPUT_WORKFLOW_FILE} has not succeeded for ${INPUT_BRANCH}" \
+              --label "${INPUT_ISSUE_LABEL}" ${assignees[@]+"${assignees[@]}"} \
+              --body-file "${work}/stale.md"
+            echo "opened an issue"
+          else
+            # Already reported for this exact head? The watchdog runs hourly, and an
+            # hourly comment about one unchanged commit trains people to mute the issue,
+            # which rebuilds the silence this exists to remove.
+            gh issue view "${issue}" --repo "${REPO}" --json body,comments \
+              --jq '.body, (.comments[].body)' > "${work}/reported.txt"
+            if grep -qF "${head_sha}" "${work}/reported.txt"; then
+              echo "issue #${issue} already reports ${head_sha}"
+            else
+              gh issue comment "${issue}" --repo "${REPO}" --body-file "${work}/stale.md"
+              echo "commented on issue #${issue}"
+            fi
+          fi
+
+          summary "### Deploy gate stale"
+          summary "\`${INPUT_BRANCH}\` head \`${head_sha}\` is ${age_minutes}m old and unshipped. Gate run: ${run_status} / ${run_conclusion}."
+          exit 1

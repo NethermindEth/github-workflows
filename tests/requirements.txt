@@ -1,0 +1,4 @@
+# Used by tests/deploy-gate-watchdog/extract_step.py to read the watchdog's shell body
+# back out of the workflow YAML. Pinned rather than relying on whatever the runner image
+# happens to ship, and pinned in a file so Dependabot can bump it (see .github/dependabot.yml).
+PyYAML==6.0.3

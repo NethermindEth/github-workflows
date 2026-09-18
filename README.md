@@ -52,6 +52,22 @@ Read about it in the [examples/docker/README.md](examples/docker/README.md) file
 
 Read about it in the [examples/ai-review/README.md](examples/ai-review/README.md) file.
 
+## Deploy Gate Watchdog
+
+Catches the case where a build-and-push workflow has been failing on the release branch
+and nobody noticed, so production is still serving an old image. Read about it in the
+[examples/watchdog/README.md](examples/watchdog/README.md) file.
+
+## Working on this repository
+
+```shell
+tests/lint_workflows.sh                      # actionlint over the workflows
+tests/deploy-gate-watchdog/run_tests.sh      # watchdog behaviour
+```
+
+Both are exactly what CI runs. `tests/lint_workflows.sh` needs Go; the watchdog tests
+need python3 with the pin in [tests/requirements.txt](tests/requirements.txt).
+
 
 ## License
 

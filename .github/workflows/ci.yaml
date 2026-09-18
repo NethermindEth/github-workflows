@@ -1,0 +1,50 @@
+name: CI
+
+# This repository ships workflows that other repositories run, so a mistake here lands in
+# everyone's pipeline at once and shows up as their build breaking, not ours. Both jobs
+# below are the same commands a developer runs locally — tests/lint_workflows.sh and
+# tests/deploy-gate-watchdog/run_tests.sh — so there is nothing CI checks that cannot be
+# reproduced from a terminal, and nothing a terminal checks that CI skips.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # actionlint's version is a tool directive in tools/actionlint/go.mod rather than a
+      # string in this file, because a version written here is invisible to Dependabot and
+      # rots in place. shellcheck comes from the runner image; actionlint finds it and runs
+      # it over every run: block.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/actionlint/go.mod
+
+      - run: tests/lint_workflows.sh
+
+  watchdog-tests:
+    name: Deploy gate watchdog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - run: pip install -r tests/requirements.txt
+
+      - run: tests/deploy-gate-watchdog/run_tests.sh

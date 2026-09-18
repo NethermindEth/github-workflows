@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Stands in for the gh CLI. Every invocation is appended to $STUB/calls.log and every
+# issue body the watchdog would have published is appended to $STUB/bodies.log, so a
+# test can assert on what was *written*, not only on the exit code.
+#
+# Anything the watchdog asks for that this does not recognise is a hard failure with a
+# distinct exit code rather than an empty response. A stub that silently answers "" for
+# a call it does not know turns a broken watchdog into a passing test.
+set -euo pipefail
+
+# Each argument is bracketed rather than joined with spaces. `$*` would render
+# `--assignee octocat,hubot` identically whether gh received it as two arguments or as
+# one fused argument, so an assertion over that log could not tell a working array
+# expansion from a broken one.
+for stub_arg in "$@"; do printf '[%s]' "${stub_arg}"; done >> "${STUB}/calls.log"
+printf '\n' >> "${STUB}/calls.log"
+
+record_body() {
+  local previous="" arg
+  for arg in "$@"; do
+    if [[ "${previous}" == "--body-file" ]]; then
+      cat "${arg}" >> "${STUB}/bodies.log"
+      return 0
+    fi
+    previous="${arg}"
+  done
+}
+
+command_name="${1:-}"
+subcommand="${2:-}"
+
+case "${command_name}" in
+  api)
+    case "${subcommand}" in
+      */commits/*) cat "${STUB}/head.json" ;;
+      *status=success*) cat "${STUB}/last_ok.json" ;;
+      *head_sha=*) cat "${STUB}/head_run.json" ;;
+      *) echo "stub gh: unexpected api path: ${subcommand}" >&2; exit 90 ;;
+    esac
+    ;;
+  label)
+    [[ "${subcommand}" == "create" ]] || { echo "stub gh: unexpected label subcommand: ${subcommand}" >&2; exit 91; }
+    ;;
+  issue)
+    case "${subcommand}" in
+      list) cat "${STUB}/issue_number.txt" ;;
+      view) cat "${STUB}/reported.txt" ;;
+      create|comment) record_body "$@" ;;
+      close) ;;
+      *) echo "stub gh: unexpected issue subcommand: ${subcommand}" >&2; exit 92 ;;
+    esac
+    ;;
+  *)
+    echo "stub gh: unexpected command: ${command_name}" >&2
+    exit 93
+    ;;
+esac

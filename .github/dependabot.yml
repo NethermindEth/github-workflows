@@ -11,3 +11,30 @@ updates:
       all-github-actions:
         patterns:
           - "*"
+
+  # actionlint is pinned as a tool directive in tools/actionlint/go.mod precisely so this
+  # entry can bump it. A version pinned where Dependabot cannot see it is a version that
+  # stays where it was put.
+  - package-ecosystem: gomod
+    directory: /tools/actionlint
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      all-go-tools:
+        patterns:
+          - "*"
+
+  - package-ecosystem: pip
+    directory: /tests
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      all-test-deps:
+        patterns:
+          - "*"
