@@ -1,0 +1,45 @@
+# Scheduled Amiqus -> Vanta background check sync, secrets loaded from Infisical.
+# Lives in the repo that owns the schedule (e.g. the terragrunt repo), not in github-workflows.
+
+name: Sync background checks to Vanta
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write to Vanta (leave false for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write # required by get_infisical_secrets
+  contents: read
+
+concurrency:
+  group: amiqus-vanta-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load secrets from Infisical
+        uses: NethermindEth/github-workflows/get_infisical_secrets@stable
+        with:
+          identity-id: ${{ secrets.INFISICAL_IDENTITY_ID }}
+          project-id: ${{ secrets.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+
+      - name: Sync Amiqus records to Vanta
+        uses: NethermindEth/github-workflows/amiqus_vanta_sync@stable
+        with:
+          amiqus-token: ${{ env.AMIQUS_TOKEN }}
+          vanta-client-id: ${{ env.VANTA_CLIENT_ID }}
+          vanta-client-secret: ${{ env.VANTA_CLIENT_SECRET }}
+          vanta-resource-id: ${{ env.VANTA_BACKGROUND_CHECK_RESOURCE_ID }}
+          email-domains: nethermind.io
+          # Scheduled runs apply; manual runs default to a dry run.
+          apply: ${{ github.event_name == 'schedule' || inputs.apply }}
+          min-records: "20"
