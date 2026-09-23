@@ -11,3 +11,10 @@ updates:
       all-github-actions:
         patterns:
           - "*"
+  - package-ecosystem: gomod
+    directory: /tools/actionlint
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"

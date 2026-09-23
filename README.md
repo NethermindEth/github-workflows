@@ -2,6 +2,8 @@
 
 This repository contains reusable GitHub Actions workflows for Nethermind projects.
 
+Run `make test` before pushing; CI runs the same target.
+
 The workflows follow a simple name convention:
 - technology-action-flavor.yaml
 
