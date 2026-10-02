@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.5.0](https://github.com/NethermindEth/github-workflows/compare/v2.4.0...v2.5.0) (2026-10-02)
+
+
+### Features
+
+* **ai-review:** small diffs to glm-5.3-flash ([98004b0](https://github.com/NethermindEth/github-workflows/commit/98004b01be9505bb79f8466ef0cf33625df71ec8))
+* **ai-review:** use glm-5.3-flash for small diffs ([#188](https://github.com/NethermindEth/github-workflows/issues/188)) ([98004b0](https://github.com/NethermindEth/github-workflows/commit/98004b01be9505bb79f8466ef0cf33625df71ec8))
+
+
+### Bug Fixes
+
+* **deps:** bump jfrog/setup-jfrog-cli from 5.1.0 to 5.2.0 in the all-github-actions group ([#183](https://github.com/NethermindEth/github-workflows/issues/183)) ([2756d41](https://github.com/NethermindEth/github-workflows/commit/2756d41fcf1e28e604aa18a51754be99d0edc22b))
+* **deps:** bump jfrog/setup-jfrog-cli in the all-github-actions group ([2756d41](https://github.com/NethermindEth/github-workflows/commit/2756d41fcf1e28e604aa18a51754be99d0edc22b))
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets ([9a86635](https://github.com/NethermindEth/github-workflows/commit/9a86635752324ec83791911cd892a5b04bc4b3d6))
+* **deps:** bump NethermindEth/github-workflows/get_infisical_secrets from 2.3.0 to 2.4.0 in the all-github-actions group ([#179](https://github.com/NethermindEth/github-workflows/issues/179)) ([9a86635](https://github.com/NethermindEth/github-workflows/commit/9a86635752324ec83791911cd892a5b04bc4b3d6))
+* **deps:** bump the-pr-agent/pr-agent from 0.45.0 to 0.46.0 in the all-github-actions group ([#185](https://github.com/NethermindEth/github-workflows/issues/185)) ([54741b4](https://github.com/NethermindEth/github-workflows/commit/54741b4756f7de7fae34b407147890045c78b013))
+* **deps:** bump the-pr-agent/pr-agent in the all-github-actions group ([54741b4](https://github.com/NethermindEth/github-workflows/commit/54741b4756f7de7fae34b407147890045c78b013))
+* skip JFrog OIDC setup when not pushing ([2a425fe](https://github.com/NethermindEth/github-workflows/commit/2a425feff1de8ad151282923828b449a4358bf8b))
+
 ## [2.4.0](https://github.com/NethermindEth/github-workflows/compare/v2.3.0...v2.4.0) (2026-09-10)
 
 
