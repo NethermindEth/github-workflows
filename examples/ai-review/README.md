@@ -59,9 +59,10 @@ jobs:
 ```
 
 `model`, `fallback_model`, `extra_instructions`, and `num_max_findings` all have sane defaults --
-override only the ones you need. Default `model` is `openai/internal/default`, i.e. the gateway's
-own internal default model (see [`ai-review.yaml`](../../.github/workflows/ai-review.yaml) for the
-current default). Keep the `openai/` prefix on any override -- litellm needs it to route through
+override only the ones you need. Default `model` is empty, which picks by diff size:
+`openai/fireworks_ai/glm-5.3-flash` for small diffs, `openai/gemini/gemini-pro-latest` for large
+ones (see [`ai-review.yaml`](../../.github/workflows/ai-review.yaml) for the current threshold).
+Passing a `model` opts out of the selection. Keep the `openai/` prefix on any override -- litellm needs it to route through
 the gateway (`OPENAI.API_BASE`) instead of trying to call another provider's API directly:
 
 ```yaml

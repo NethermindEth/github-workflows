@@ -25,7 +25,7 @@ on:
         description: "Gateway model PR-Agent uses for review/describe/improve (keep the openai/ prefix)"
         type: string
         required: false
-        default: "openai/internal/default"
+        default: "openai/fireworks_ai/glm-5.3-flash"
       fallback_model:
         # Same "openai/" prefix requirement as `model` above -- see that comment.
         description: "Gateway fallback model if the primary model call fails (keep the openai/ prefix)"

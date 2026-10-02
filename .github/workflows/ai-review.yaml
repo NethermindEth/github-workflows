@@ -26,9 +26,9 @@ on:
         type: string
         required: false
         # Empty means size-based selection (the "Select model by diff size" step below):
-        # internal/default (thinking mode, the better reviewer) up to the calibrated diff-size
-        # threshold, gemini-pro-latest (strong long-context, via the gateway's gemini/* route)
-        # above it. A caller passing an explicit model here opts out of the selection entirely.
+        # glm-5.3-flash up to the calibrated diff-size threshold, gemini-pro-latest (strong
+        # long-context, via the gateway's gemini/* route) above it. A caller passing an explicit
+        # model here opts out of the selection entirely.
         default: ""
       fallback_model:
         # Same "openai/" prefix requirement as `model` above -- see that comment.
@@ -121,14 +121,13 @@ jobs:
           env-slug: ${{ inputs.env_slug }}
           secret-path: ${{ inputs.secret_path }}
 
-      # Picks the model from the PR's diff size unless the caller pinned one. Thinking mode
-      # (internal/default) reviews better but its e2e latency grows with prompt size past
-      # pr-agent's 150s ai_timeout, and pr-agent's stacked silent retries then burn the whole
-      # 20-minute step budget without ever reaching the fallback model (AUT-495). Above the
-      # threshold the review goes to gemini-pro-latest through the gateway (the litellm
-      # gemini/* route) — big diffs get a strong long-context model instead of the
-      # thinking-off Qwen. Calibrated from the two production runs that exposed this, both
-      # measured as `gh pr diff` bytes against pr-agent's own token count of the same diff
+      # Picks the model from the PR's diff size unless the caller pinned one: glm-5.3-flash up
+      # to the threshold, gemini-pro-latest through the gateway (the litellm gemini/* route)
+      # above it, so big diffs get a strong long-context model. The threshold was calibrated on
+      # internal/default (thinking-mode Qwen), whose e2e latency grows with prompt size past
+      # pr-agent's 150s ai_timeout, and pr-agent's stacked silent retries then burned the whole
+      # 20-minute step budget without ever reaching the fallback model (AUT-495). Datapoints are
+      # `gh pr diff` bytes against pr-agent's own token count of the same diff
       # (~3.0 bytes/token, consistent across both):
       #
       #   access-policy#24    29,310 B (~10.2k tokens)  ->  ~125s, PASSED
@@ -157,7 +156,7 @@ jobs:
           fi
           bytes=$(gh pr diff "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" | wc -c | tr -d ' ')
           if [ "${bytes}" -le "${DIFF_BYTES_THRESHOLD}" ]; then
-            model="openai/internal/default"
+            model="openai/fireworks_ai/glm-5.3-flash"
           else
             model="openai/gemini/gemini-pro-latest"
           fi
