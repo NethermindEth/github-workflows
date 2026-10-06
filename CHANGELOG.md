@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/NethermindEth/github-workflows/compare/v2.5.0...v2.5.1) (2026-10-06)
+
+
+### Bug Fixes
+
+* **deps:** bump the all-github-actions group with 3 updates ([#189](https://github.com/NethermindEth/github-workflows/issues/189)) ([f889570](https://github.com/NethermindEth/github-workflows/commit/f8895706f7ac35a7e2f51a16e4eb5b87b87d974a))
+
 ## [2.5.0](https://github.com/NethermindEth/github-workflows/compare/v2.4.0...v2.5.0) (2026-10-02)
 
 
