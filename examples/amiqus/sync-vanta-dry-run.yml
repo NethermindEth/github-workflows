@@ -1,0 +1,24 @@
+# Manual dry run using plain GitHub secrets - no Infisical, no write to Vanta.
+# Use this first to eyeball which Amiqus records would become Vanta background checks.
+
+name: Amiqus to Vanta dry run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preview the Vanta payload
+        uses: NethermindEth/github-workflows/amiqus_vanta_sync@stable
+        with:
+          amiqus-token: ${{ secrets.AMIQUS_TOKEN }}
+          vanta-client-id: ${{ secrets.VANTA_CLIENT_ID }}
+          vanta-client-secret: ${{ secrets.VANTA_CLIENT_SECRET }}
+          vanta-resource-id: ${{ secrets.VANTA_BACKGROUND_CHECK_RESOURCE_ID }}
+          email-domains: nethermind.io
+          apply: "false"
