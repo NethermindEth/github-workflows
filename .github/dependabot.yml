@@ -11,3 +11,14 @@ updates:
       all-github-actions:
         patterns:
           - "*"
+  - package-ecosystem: pip
+    directory: /.github/requirements
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "fix"
+      include: "scope"
+    groups:
+      all-pip:
+        patterns:
+          - "*"
