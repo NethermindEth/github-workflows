@@ -40,8 +40,13 @@ jobs:
           tag: v0.55.1
 
       - name: Install pre-commit
+        env:
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
-          python -m pip install pre-commit
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/pre-commit.txt" \
+            "https://raw.githubusercontent.com/$WORKFLOW_REPOSITORY/$WORKFLOW_SHA/.github/requirements/pre-commit.txt"
+          python -m pip install --require-hashes -r "$RUNNER_TEMP/pre-commit.txt"
           python -m pip freeze --local
 
       - name: Cache pre-commit environments
