@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.5.1](https://github.com/NethermindEth/github-workflows/compare/v2.5.0...v2.5.1) (2026-10-12)
+
+
+### Bug Fixes
+
+* **deps:** bump the all-github-actions group with 3 updates ([#189](https://github.com/NethermindEth/github-workflows/issues/189)) ([f889570](https://github.com/NethermindEth/github-workflows/commit/f8895706f7ac35a7e2f51a16e4eb5b87b87d974a))
+* **pre-commit:** inline pre-commit/action on node24 ([0dec409](https://github.com/NethermindEth/github-workflows/commit/0dec409a65b090dc33735f6e7b8128a5e9ec317f))
+* **pre-commit:** inline pre-commit/action to drop node20 cache ([#191](https://github.com/NethermindEth/github-workflows/issues/191)) ([0dec409](https://github.com/NethermindEth/github-workflows/commit/0dec409a65b090dc33735f6e7b8128a5e9ec317f))
+
 ## [2.5.0](https://github.com/NethermindEth/github-workflows/compare/v2.4.0...v2.5.0) (2026-10-02)
 
 
