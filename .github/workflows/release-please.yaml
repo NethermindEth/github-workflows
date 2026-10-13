@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Release Please
         id: release
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           release-type: ${{ inputs.releaseType }}
     outputs:
@@ -56,3 +56,97 @@ jobs:
       sha: ${{ steps.release.outputs.sha }}
       pr: ${{ steps.release.outputs.pr }}
       prs: ${{ steps.release.outputs.prs }}
+
+  approve-release-pr-runs:
+    needs: [version]
+    if: needs.version.outputs.prs_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_JSON: ${{ needs.version.outputs.pr }}
+      ALLOWED_BRANCH: release-please--branches--main
+      BOT: github-actions[bot]
+    steps:
+      - name: Check release PR files
+        id: check
+        run: |
+          set -euo pipefail
+          head_branch="$(jq -r '.headBranchName' <<<"$PR_JSON")"
+          number="$(jq -r '.number' <<<"$PR_JSON")"
+          if [[ "$head_branch" != "$ALLOWED_BRANCH" ]]; then
+            echo "::error::release-please PR head branch '$head_branch' is not '$ALLOWED_BRANCH'"
+            exit 1
+          fi
+          if ! [[ "$number" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid release-please PR number '$number'"
+            exit 1
+          fi
+          pr="$(gh api "repos/$REPO/pulls/$number")"
+          jq -e --arg repo "$REPO" --arg branch "$ALLOWED_BRANCH" --arg bot "$BOT" '
+            .state == "open" and .user.login == $bot
+            and .head.ref == $branch and .head.repo.full_name == $repo
+          ' <<<"$pr" >/dev/null || {
+            echo "::error::PR #$number is not an open $BOT PR from $REPO:$ALLOWED_BRANCH"
+            exit 1
+          }
+          head_sha="$(jq -r '.head.sha' <<<"$pr")"
+          gh api --paginate "repos/$REPO/pulls/$number/files?per_page=100" --jq '.[]' >files.jsonl
+          if [[ "$(jq -s length files.jsonl)" != "$(jq -r '.changed_files' <<<"$pr")" ]]; then
+            echo "::error::PR #$number file list is incomplete"
+            exit 1
+          fi
+          bad="$(jq -r '
+            [.filename, (.previous_filename // empty)][]
+            | select(. != "CHANGELOG.md" and . != ".release-please-manifest.json" and (endswith("/CHANGELOG.md") | not))
+          ' files.jsonl)"
+          if [[ -n "$bad" ]]; then
+            while IFS= read -r path; do
+              echo "::error::PR #$number changes non-allowlisted path: $path"
+            done <<<"$bad"
+            exit 1
+          fi
+          echo "number=$number" >>"$GITHUB_OUTPUT"
+          echo "head_sha=$head_sha" >>"$GITHUB_OUTPUT"
+
+      - name: Approve release PR runs
+        env:
+          NUMBER: ${{ steps.check.outputs.number }}
+          HEAD_SHA: ${{ steps.check.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.head.sha')" != "$HEAD_SHA" ]]; then
+            echo "::error::PR #$NUMBER head moved after the file check"
+            exit 1
+          fi
+          approved=0
+          done_ids=""
+          for _ in $(seq 1 12); do
+            runs="$(gh api "repos/$REPO/actions/runs?status=action_required&head_sha=$HEAD_SHA&per_page=100" --jq '.workflow_runs[]')"
+            pending=0
+            while IFS= read -r run; do
+              [[ -n "$run" ]] || continue
+              id="$(jq -r '.id' <<<"$run")"
+              [[ " $done_ids " != *" $id "* ]] || continue
+              done_ids+=" $id"
+              if jq -e --arg sha "$HEAD_SHA" --arg branch "$ALLOWED_BRANCH" --arg bot "$BOT" '
+                .event == "pull_request" and .head_branch == $branch and .head_sha == $sha
+                and .actor.login == $bot and .triggering_actor.login == $bot
+              ' <<<"$run" >/dev/null; then
+                gh api -X POST "repos/$REPO/actions/runs/$id/approve" >/dev/null
+                echo "Approved run $id ($(jq -r '.name' <<<"$run"))"
+                approved=$((approved + 1))
+                pending=$((pending + 1))
+              else
+                echo "Skipping run $id: $(jq -c '{event, head_branch, head_sha, actor: .actor.login, triggering_actor: .triggering_actor.login}' <<<"$run")"
+              fi
+            done <<<"$runs"
+            if (( approved > 0 && pending == 0 )); then
+              break
+            fi
+            sleep 5
+          done
+          echo "Approved $approved run(s) for PR #$NUMBER"
