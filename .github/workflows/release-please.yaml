@@ -94,7 +94,7 @@ jobs:
             exit 1
           }
           head_sha="$(jq -r '.head.sha' <<<"$pr")"
-          gh api --paginate "repos/$REPO/pulls/$number/files?per_page=100" --jq '.[]' >files.jsonl
+          gh api --paginate "repos/$REPO/pulls/$number/files?per_page=100" --jq '.[] | tojson' >files.jsonl
           if [[ "$(jq -s length files.jsonl)" != "$(jq -r '.changed_files' <<<"$pr")" ]]; then
             echo "::error::PR #$number file list is incomplete"
             exit 1
@@ -125,7 +125,7 @@ jobs:
           approved=0
           done_ids=""
           for _ in $(seq 1 12); do
-            runs="$(gh api "repos/$REPO/actions/runs?status=action_required&head_sha=$HEAD_SHA&per_page=100" --jq '.workflow_runs[]')"
+            runs="$(gh api "repos/$REPO/actions/runs?status=action_required&head_sha=$HEAD_SHA&per_page=100" --jq '.workflow_runs[] | tojson')"
             pending=0
             while IFS= read -r run; do
               [[ -n "$run" ]] || continue
@@ -149,4 +149,7 @@ jobs:
             fi
             sleep 5
           done
+          if (( approved == 0 )); then
+            echo "::warning::No eligible action_required runs found for PR #$NUMBER within 60s"
+          fi
           echo "Approved $approved run(s) for PR #$NUMBER"
