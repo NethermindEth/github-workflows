@@ -16,7 +16,15 @@ pattern running in `citizen-automations` today.
    (`https://litellm.nethermind.dev/v1`), not read from Infisical, so `LLM_BASE_URL` isn't needed
    either way. `OPENAI.KEY` tries `LITELLM_API_KEY` then `LLM_API_KEY`, so either naming works.
 3. **Label**: create a `needs-human-review` label on the repo (or pass a different `label` input).
-4. Add the required status check in branch protection on your default branch. **The check name is
+4. **Permissions**: the calling job must grant everything the reusable workflow declares
+   (`id-token: write`, `pull-requests: write`, `issues: write`, `contents: read`), as in the
+   examples below. A called workflow can never receive more `GITHUB_TOKEN` permissions than its
+   caller allows, so if your repo defaults to read-only permissions or your workflow file has a
+   restrictive top-level `permissions:` block, GitHub rejects the run at validation time with
+   `The workflow is requesting 'issues: write, pull-requests: write', but is only allowed
+   'issues: none, pull-requests: none'`. A job-level `permissions:` block on the calling job
+   overrides both the repo default and the workflow-level block for that job only.
+5. Add the required status check in branch protection on your default branch. **The check name is
    `<your-job-id> / ai-review`, not `ai-review`** -- GitHub prefixes a reusable-workflow job's
    check with the CALLER's own job id. If you name your calling job `ai-review` (as in the example
    below), the actual check name is `ai-review / ai-review`. Getting this wrong means branch
@@ -48,6 +56,11 @@ concurrency:
 jobs:
   ai-review:
     uses: NethermindEth/github-workflows/.github/workflows/ai-review.yaml@stable
+    permissions:
+      id-token: write # OIDC auth to Infisical
+      pull-requests: write # PR-Agent posts review/describe/improve; the gate applies the label
+      issues: write # PR-Agent's own review labels
+      contents: read
     with:
       extra_instructions: |
         Flag any hardcoded secret, PII sent to an external surface, or a publicly callable
@@ -69,6 +82,11 @@ the gateway (`OPENAI.API_BASE`) instead of trying to call another provider's API
 jobs:
   ai-review:
     uses: NethermindEth/github-workflows/.github/workflows/ai-review.yaml@stable
+    permissions:
+      id-token: write # OIDC auth to Infisical
+      pull-requests: write # PR-Agent posts review/describe/improve; the gate applies the label
+      issues: write # PR-Agent's own review labels
+      contents: read
     with:
       model: openai/anthropic/claude-sonnet-5
       fallback_model: openai/internal/default
@@ -102,6 +120,11 @@ concurrency:
 jobs:
   command:
     uses: NethermindEth/github-workflows/.github/workflows/ai-review-command.yaml@stable
+    permissions:
+      id-token: write # OIDC auth to Infisical
+      pull-requests: write # PR-Agent posts the command's output
+      issues: write
+      contents: read
     secrets:
       infisical_identity_id: ${{ secrets.INFISICAL_IDENTITY_ID }}
       infisical_project_id: ${{ secrets.INFISICAL_PROJECT_ID }}
