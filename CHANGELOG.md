@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/NethermindEth/github-workflows/compare/v3.0.0...v4.0.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **docker:** pushes that passed before can now fail on an Xray violation. The caller's OIDC identity must be allowed to run Xray scans, and the iac-all-repos watch must exist. The first platform is now built an extra time (cache-backed).
+
+### Features
+
+* **docker:** gate JFrog push on Xray scan ([#196](https://github.com/NethermindEth/github-workflows/issues/196)) ([77812ab](https://github.com/NethermindEth/github-workflows/commit/77812ab62170c3b28ac4ba88cdee85f67c74fffa))
+
 ## [3.0.0](https://github.com/NethermindEth/github-workflows/compare/v2.5.1...v3.0.0) (2026-10-14)
 
 
