@@ -31,6 +31,14 @@ Builds whose stages `FROM` a private registry image, or that consume a secret, s
 `cache_from: ""` and `cache_to: ""`: the default `type=gha,mode=max` exports every stage's layers
 into the repository's Actions cache, which any workflow run in the repository can restore.
 
+#### Xray scan gate
+
+When `push` is true, the workflow builds the first entry of `platforms` into the local daemon and
+runs `jf docker scan --watches iac-all-repos --fail=true` before anything is pushed. A Critical
+vulnerability or malicious package (the `iac-security-critical` policy) fails the job with exit 3;
+any scan error (auth, Xray unavailable, missing watch) also fails the job. Other platforms are not
+scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule.
+
 
 ### Docker Hub
 
