@@ -81,7 +81,7 @@ the gateway (`OPENAI.API_BASE`) instead of trying to call another provider's API
 ```yaml
 jobs:
   ai-review:
-    uses: NethermindEth/github-workflows/.github/workflows/ai-review.yaml@stable
+    uses: NethermindEth/github-workflows/.github/workflows/ai-review.yaml@main
     permissions:
       id-token: write # OIDC auth to Infisical
       pull-requests: write # PR-Agent posts review/describe/improve; the gate applies the label
@@ -119,7 +119,7 @@ concurrency:
 
 jobs:
   command:
-    uses: NethermindEth/github-workflows/.github/workflows/ai-review-command.yaml@stable
+    uses: NethermindEth/github-workflows/.github/workflows/ai-review-command.yaml@main
     permissions:
       id-token: write # OIDC auth to Infisical
       pull-requests: write # PR-Agent posts the command's output
