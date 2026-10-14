@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.0](https://github.com/NethermindEth/github-workflows/compare/v2.5.1...v3.0.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **release-please:** callers of release-please.yaml and job-terraform-release.yaml must grant actions: write to the calling job, otherwise the run fails at startup.
+
+### Features
+
+* **release-please:** approve release PR runs ([#194](https://github.com/NethermindEth/github-workflows/issues/194)) ([edc606b](https://github.com/NethermindEth/github-workflows/commit/edc606b918fa07b4d3c2051d99dd1e113278f72e))
+
+
+### Bug Fixes
+
+* **pre-commit:** pin pre-commit with hashes ([#192](https://github.com/NethermindEth/github-workflows/issues/192)) ([8a23435](https://github.com/NethermindEth/github-workflows/commit/8a234357c116b9c5d3cd050fb34e65faa2cb0689))
+
 ## [2.5.1](https://github.com/NethermindEth/github-workflows/compare/v2.5.0...v2.5.1) (2026-10-12)
 
 
