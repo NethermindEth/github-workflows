@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/NethermindEth/github-workflows/compare/v4.0.1...v4.0.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **jfrog:** scope xray scan image tag per repo ([#200](https://github.com/NethermindEth/github-workflows/issues/200)) ([f0b55a4](https://github.com/NethermindEth/github-workflows/commit/f0b55a43f87969ed340c1f50598ef1bd8e648c0c))
+
 ## [4.0.1](https://github.com/NethermindEth/github-workflows/compare/v4.0.0...v4.0.1) (2026-10-15)
 
 
