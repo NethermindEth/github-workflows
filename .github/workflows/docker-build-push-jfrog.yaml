@@ -239,6 +239,18 @@ jobs:
           fi
           echo "platform=${platform}" >> "$GITHUB_OUTPUT"
 
+      - name: Name Xray scan image
+        if: ${{ inputs.push }}
+        id: scan-image
+        run: |
+          set -euo pipefail
+          repo="$(printf '%s' "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "${repo}" =~ ^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*$ ]]; then
+            echo "::error::Repository name '${repo}' is not a valid Docker image name component"
+            exit 1
+          fi
+          echo "image=xray-scan-${repo}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU for Xray scan build
         if: ${{ inputs.push && inputs.setup-qemu }}
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
@@ -254,7 +266,7 @@ jobs:
           context: ${{ inputs.context }} # zizmor: ignore[template-injection]
           file: ${{ inputs.dockerfile_path }}
           platforms: ${{ steps.scan-platform.outputs.platform }}
-          tags: xray-scan:${{ github.sha }}
+          tags: ${{ steps.scan-image.outputs.image }}
           load: true
           push: false
           cache-from: ${{ inputs.cache_from }}
@@ -268,7 +280,7 @@ jobs:
       - name: Xray scan gate
         if: ${{ inputs.push }}
         env:
-          SCAN_IMAGE: xray-scan:${{ github.sha }}
+          SCAN_IMAGE: ${{ steps.scan-image.outputs.image }}
           XRAY_WATCH: iac-all-repos
           JFROG_PLATFORM_URL: https://${{ inputs.jfrog_url }}
           XRAY_OIDC_PROVIDER: github-nethermindeth-xray
