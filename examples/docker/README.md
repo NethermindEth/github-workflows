@@ -37,7 +37,9 @@ When `push` is true, the workflow builds the first entry of `platforms` into the
 runs `jf docker scan --watches iac-all-repos --fail=true` before anything is pushed. A Critical
 vulnerability or malicious package (the `iac-security-critical` policy) fails the job with exit 3;
 any scan error (auth, Xray unavailable, missing watch) also fails the job. Other platforms are not
-scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule.
+scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule
+scoped to the scan image's artifact name, `xray-scan-<repository name, lowercased>` (tagged with the
+commit SHA). A repository name that is not a valid Docker image name fails the job.
 
 The scan does not use the caller's project token, which Xray rejects. It requests a GitHub OIDC
 token with audience `jfrog-xray-scan` and exchanges it at the `github-nethermindeth-xray` provider
