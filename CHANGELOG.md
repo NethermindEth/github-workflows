@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/NethermindEth/github-workflows/compare/v4.0.0...v4.0.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **jfrog:** use scan-only token for Xray scan ([#198](https://github.com/NethermindEth/github-workflows/issues/198)) ([1d6a9b4](https://github.com/NethermindEth/github-workflows/commit/1d6a9b4d797162c890f81c389f3f7ae900f0a93a))
+
 ## [4.0.0](https://github.com/NethermindEth/github-workflows/compare/v3.0.0...v4.0.0) (2026-10-14)
 
 
