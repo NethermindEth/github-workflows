@@ -270,10 +270,36 @@ jobs:
         env:
           SCAN_IMAGE: xray-scan:${{ github.sha }}
           XRAY_WATCH: iac-all-repos
+          JFROG_PLATFORM_URL: https://${{ inputs.jfrog_url }}
+          XRAY_OIDC_PROVIDER: github-nethermindeth-xray
+          XRAY_OIDC_AUDIENCE: jfrog-xray-scan
         run: |
           set -euo pipefail
+          umask 077
+          JFROG_CLI_HOME_DIR="$(mktemp -d "${RUNNER_TEMP}/jf-xray.XXXXXX")"
+          export JFROG_CLI_HOME_DIR
+          trap 'rm -rf "${JFROG_CLI_HOME_DIR}"' EXIT
+
+          fail_exchange() {
+            echo "::error::Could not get the Xray scan token from ${XRAY_OIDC_PROVIDER}: $1. Image not pushed."
+            exit 1
+          }
+          id_token="$(curl -sSf -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${XRAY_OIDC_AUDIENCE}" | jq -r '.value // empty')" \
+            || fail_exchange "GitHub OIDC token request failed"
+          [[ -n "${id_token}" ]] || fail_exchange "GitHub returned no OIDC token"
+          echo "::add-mask::${id_token}"
+          scan_token="$(jq -n --arg t "${id_token}" --arg p "${XRAY_OIDC_PROVIDER}" \
+            '{grant_type: "urn:ietf:params:oauth:grant-type:token-exchange", subject_token_type: "urn:ietf:params:oauth:token-type:id_token", subject_token: $t, provider_name: $p}' \
+            | curl -sSf -X POST -H 'Content-Type: application/json' --data @- "${JFROG_PLATFORM_URL}/access/api/v1/oidc/token" \
+            | jq -r '.access_token // empty')" \
+            || fail_exchange "JFrog token exchange failed"
+          [[ -n "${scan_token}" ]] || fail_exchange "JFrog returned no access token"
+          echo "::add-mask::${scan_token}"
+          jf c add xray-scan --url "${JFROG_PLATFORM_URL}" --access-token "${scan_token}" --interactive=false
+
           rc=0
-          jf docker scan "${SCAN_IMAGE}" --watches "${XRAY_WATCH}" --fail=true || rc=$?
+          jf docker scan "${SCAN_IMAGE}" --server-id xray-scan --watches "${XRAY_WATCH}" --fail=true || rc=$?
           case "${rc}" in
             0) ;;
             3)

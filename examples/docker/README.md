@@ -39,6 +39,11 @@ vulnerability or malicious package (the `iac-security-critical` policy) fails th
 any scan error (auth, Xray unavailable, missing watch) also fails the job. Other platforms are not
 scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule.
 
+The scan does not use the caller's project token, which Xray rejects. It requests a GitHub OIDC
+token with audience `jfrog-xray-scan` and exchanges it at the `github-nethermindeth-xray` provider
+for a 300-second token scoped to the `xray-scanner` group only (managed in
+`terraform-saas-artifactory`). If the exchange fails, the job fails before anything is pushed.
+
 
 ### Docker Hub
 
