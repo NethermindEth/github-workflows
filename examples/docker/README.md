@@ -56,6 +56,11 @@ The workflow for building and publishing Docker images to Docker Hub.
 **Simple Example:** [`examples/docker/build-push-dockerhub-simple.yml`](./build-push-dockerhub-simple.yml)
 **Complete Example:** [`examples/docker/build-push-dockerhub-complete.yml`](./build-push-dockerhub-complete.yml)
 
+#### Xray scan gate
+
+When `push` is true the workflow runs the same Xray scan gate as the JFrog workflow before pushing
+(see above). Callers need `id-token: write`, which this workflow already required.
+
 
 ## Promote
 

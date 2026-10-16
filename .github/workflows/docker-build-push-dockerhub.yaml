@@ -141,6 +141,108 @@ jobs:
           chmod +x "$SCRIPT_PATH"
           bash "$SCRIPT_PATH"
 
+      - name: Install JFrog CLI
+        if: ${{ inputs.push }}
+        uses: jfrog/setup-jfrog-cli@68c0efdc951dd2359bbbfa15c48bc67b3ae8e4d6 # v5.2.0
+
+      - name: Select Xray scan platform
+        if: ${{ inputs.push }}
+        id: scan-platform
+        env:
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          platform="${INPUT_PLATFORMS%%,*}"
+          platform="${platform//[[:space:]]/}"
+          if [[ ! "${platform}" =~ ^[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?$ ]]; then
+            echo "::error::Invalid platform '${platform}' in platforms input"
+            exit 1
+          fi
+          echo "platform=${platform}" >> "$GITHUB_OUTPUT"
+
+      - name: Name Xray scan image
+        if: ${{ inputs.push }}
+        id: scan-image
+        run: |
+          set -euo pipefail
+          repo="$(printf '%s' "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "${repo}" =~ ^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*$ ]]; then
+            echo "::error::Repository name '${repo}' is not a valid Docker image name component"
+            exit 1
+          fi
+          echo "image=xray-scan-${repo}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU for Xray scan build
+        if: ${{ inputs.push && inputs.setup-qemu }}
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - name: Set up Docker Buildx for Xray scan build
+        if: ${{ inputs.push }}
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image for Xray scan
+        if: ${{ inputs.push }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ inputs.context }} # zizmor: ignore[template-injection]
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ steps.scan-platform.outputs.platform }}
+          tags: ${{ steps.scan-image.outputs.image }}
+          load: true
+          push: false
+          secrets: ${{ inputs.docker_secrets }}
+          secret-envs: ${{ inputs.docker_secret_envs }}
+          secret-files: ${{ inputs.docker_secret_files }}
+          ulimit: ${{ inputs.docker_ulimit }}
+          build-args: ${{ inputs.docker_build_args }}
+
+      - name: Xray scan gate
+        if: ${{ inputs.push }}
+        env:
+          SCAN_IMAGE: ${{ steps.scan-image.outputs.image }}
+          XRAY_WATCH: iac-all-repos
+          JFROG_PLATFORM_URL: https://nethermind.jfrog.io
+          XRAY_OIDC_PROVIDER: github-nethermindeth-xray
+          XRAY_OIDC_AUDIENCE: jfrog-xray-scan
+        run: |
+          set -euo pipefail
+          umask 077
+          JFROG_CLI_HOME_DIR="$(mktemp -d "${RUNNER_TEMP}/jf-xray.XXXXXX")"
+          export JFROG_CLI_HOME_DIR
+          trap 'rm -rf "${JFROG_CLI_HOME_DIR}"' EXIT
+
+          fail_exchange() {
+            echo "::error::Could not get the Xray scan token from ${XRAY_OIDC_PROVIDER}: $1. Image not pushed."
+            exit 1
+          }
+          id_token="$(curl -sSf -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${XRAY_OIDC_AUDIENCE}" | jq -r '.value // empty')" \
+            || fail_exchange "GitHub OIDC token request failed"
+          [[ -n "${id_token}" ]] || fail_exchange "GitHub returned no OIDC token"
+          echo "::add-mask::${id_token}"
+          scan_token="$(jq -n --arg t "${id_token}" --arg p "${XRAY_OIDC_PROVIDER}" \
+            '{grant_type: "urn:ietf:params:oauth:grant-type:token-exchange", subject_token_type: "urn:ietf:params:oauth:token-type:id_token", subject_token: $t, provider_name: $p}' \
+            | curl -sSf -X POST -H 'Content-Type: application/json' --data @- "${JFROG_PLATFORM_URL}/access/api/v1/oidc/token" \
+            | jq -r '.access_token // empty')" \
+            || fail_exchange "JFrog token exchange failed"
+          [[ -n "${scan_token}" ]] || fail_exchange "JFrog returned no access token"
+          echo "::add-mask::${scan_token}"
+          jf c add xray-scan --url "${JFROG_PLATFORM_URL}" --access-token "${scan_token}" --interactive=false
+
+          rc=0
+          jf docker scan "${SCAN_IMAGE}" --server-id xray-scan --watches "${XRAY_WATCH}" --fail=true || rc=$?
+          case "${rc}" in
+            0) ;;
+            3)
+              echo "::error::Xray watch ${XRAY_WATCH} matched a fail-build rule (Critical vulnerability or malicious package). Image not pushed."
+              exit 3
+              ;;
+            *)
+              echo "::error::Xray scan did not complete (exit ${rc}): auth, Xray availability, or missing watch ${XRAY_WATCH}. Image not pushed."
+              exit "${rc}"
+              ;;
+          esac
+
       - name: Build and push
         uses: NethermindEth/github-action-image-build-and-push@361ce6e98f238b169b2000a7224ec1d467cc6506
         with:
