@@ -315,7 +315,7 @@ jobs:
           esac
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@972f8cf69d5ede0a0cb9d7cc953fa902538e2ffa
+        uses: NethermindEth/github-action-image-build-and-push@361ce6e98f238b169b2000a7224ec1d467cc6506
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
