@@ -91,16 +91,6 @@ on:
         description: "List of build-time variables"
         required: false
         type: string
-      ignore_trivy:
-        description: "Ignore Trivy scan errors"
-        required: false
-        type: boolean
-        default: false
-      run_trivy:
-        description: "Run Trivy scan"
-        required: false
-        type: boolean
-        default: true
     secrets:
       dockerhub_username:
         description: "Docker Hub username"
@@ -167,5 +157,3 @@ jobs:
           secret-files: ${{ inputs.docker_secret_files }}
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
-          ignore_trivy: ${{ inputs.ignore_trivy }}
-          run_trivy: ${{ inputs.run_trivy }}

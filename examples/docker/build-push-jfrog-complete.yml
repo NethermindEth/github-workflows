@@ -54,5 +54,3 @@ jobs:
       docker_secret_files: ""
       docker_ulimit: ""
       docker_build_args: ""
-      ignore_trivy: false
-      run_trivy: true

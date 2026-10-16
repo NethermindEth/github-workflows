@@ -101,16 +101,6 @@ on:
         description: "List of build-time variables"
         required: false
         type: string
-      ignore_trivy:
-        description: "Ignore Trivy scan errors"
-        required: false
-        type: boolean
-        default: false
-      run_trivy:
-        description: "Run Trivy scan"
-        required: false
-        type: boolean
-        default: true
       cache_from:
         description: "BuildKit cache sources passed to the build (e.g. type=gha). Set to an empty string to disable the layer cache, for builds whose stages pull private images or consume secrets."
         required: false
@@ -340,7 +330,5 @@ jobs:
           secret-files: ${{ inputs.docker_secret_files }}
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
-          ignore_trivy: ${{ inputs.ignore_trivy }}
-          run_trivy: ${{ inputs.run_trivy }}
           cache_from: ${{ inputs.cache_from }}
           cache_to: ${{ inputs.cache_to }}
