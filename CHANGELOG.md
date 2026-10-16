@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/NethermindEth/github-workflows/compare/v4.0.2...v5.0.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **jfrog:** inputs run_trivy and ignore_trivy are removed from docker-build-push-jfrog.yaml and docker-build-push-dockerhub.yaml; callers passing them fail with "Invalid input". Docker Hub pushes are no longer scanned.
+
+### Features
+
+* **jfrog:** remove trivy from jfrog workflow ([#202](https://github.com/NethermindEth/github-workflows/issues/202)) ([0e1c93a](https://github.com/NethermindEth/github-workflows/commit/0e1c93a364ec6dcc245834f57cda631c50fceb73))
+
 ## [4.0.2](https://github.com/NethermindEth/github-workflows/compare/v4.0.1...v4.0.2) (2026-10-15)
 
 
