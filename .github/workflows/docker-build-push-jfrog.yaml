@@ -101,16 +101,6 @@ on:
         description: "List of build-time variables"
         required: false
         type: string
-      ignore_trivy:
-        description: "Ignore Trivy scan errors"
-        required: false
-        type: boolean
-        default: false
-      run_trivy:
-        description: "Run Trivy scan"
-        required: false
-        type: boolean
-        default: true
       cache_from:
         description: "BuildKit cache sources passed to the build (e.g. type=gha). Set to an empty string to disable the layer cache, for builds whose stages pull private images or consume secrets."
         required: false
@@ -325,7 +315,7 @@ jobs:
           esac
 
       - name: Build and push
-        uses: NethermindEth/github-action-image-build-and-push@972f8cf69d5ede0a0cb9d7cc953fa902538e2ffa
+        uses: NethermindEth/github-action-image-build-and-push@361ce6e98f238b169b2000a7224ec1d467cc6506
         with:
           registry: "artifactory"
           image_name: ${{ steps.env-vars.outputs.IMAGE_NAME }}
@@ -340,7 +330,5 @@ jobs:
           secret-files: ${{ inputs.docker_secret_files }}
           ulimit: ${{ inputs.docker_ulimit }}
           build-args: ${{ inputs.docker_build_args }}
-          ignore_trivy: ${{ inputs.ignore_trivy }}
-          run_trivy: ${{ inputs.run_trivy }}
           cache_from: ${{ inputs.cache_from }}
           cache_to: ${{ inputs.cache_to }}
