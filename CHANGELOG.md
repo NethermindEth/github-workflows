@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.0](https://github.com/NethermindEth/github-workflows/compare/v5.0.0...v5.1.0) (2026-10-16)
+
+
+### Features
+
+* **dockerhub:** gate pushes on xray scan ([#204](https://github.com/NethermindEth/github-workflows/issues/204)) ([c3679ce](https://github.com/NethermindEth/github-workflows/commit/c3679cea76e48e5542ec8e3430b33d4dbfe68df5))
+
 ## [5.0.0](https://github.com/NethermindEth/github-workflows/compare/v4.0.2...v5.0.0) (2026-10-16)
 
 
