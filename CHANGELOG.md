@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.1](https://github.com/NethermindEth/github-workflows/compare/v5.1.0...v5.1.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **ai-review:** allow disabling the gate label and keep infra failures advisory ([#206](https://github.com/NethermindEth/github-workflows/issues/206)) ([90f195a](https://github.com/NethermindEth/github-workflows/commit/90f195aaf9b79840fc944e4837fa207517492cff))
+
 ## [5.1.0](https://github.com/NethermindEth/github-workflows/compare/v5.0.0...v5.1.0) (2026-10-16)
 
 
