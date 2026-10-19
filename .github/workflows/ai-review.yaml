@@ -54,17 +54,18 @@ on:
         required: false
         default: 5
       label:
-        description: "Label applied when the gate blocks or when no review could be judged"
+        description: "Label applied when the gate blocks or when no review could be judged. Empty disables labeling"
         type: string
         required: false
         default: "needs-human-review"
       fail_on_missing_review:
         description: >-
-          Fail the check when no judgable review was produced (LLM error, gateway outage,
-          malformed output), not just on a real security_concerns finding. Default true (matches
-          this workflow's fail-closed default). A consumer riding out a known gateway outage can
-          set false to drop that specific case to advisory-only (label still applied either way);
-          a real security finding always fails regardless of this input.
+          Fail the check when no judgable review was produced (LLM error, gateway outage or spend
+          cap, timeout, malformed output), not just on a real security_concerns finding. Default
+          true (matches this workflow's fail-closed default). Set false to make those
+          infrastructure failures advisory: the PR-Agent step stops failing the job and the gate
+          exits 0 (label still applied if `label` is set); a real security finding always fails
+          regardless of this input.
         type: boolean
         required: false
         default: true
@@ -177,7 +178,9 @@ jobs:
       - name: PR-Agent review
         id: pr_agent
         if: github.actor != inputs.skip_actor
-        continue-on-error: false
+        # Fail-closed callers keep the step red; fail_on_missing_review=false callers keep the
+        # job green on infrastructure failures and let the gate below decide on the output.
+        continue-on-error: ${{ !inputs.fail_on_missing_review }}
         timeout-minutes: 20
         # Our fork of the same upstream commit (v0.43.0) plus the timeout-to-fallback fix
         # (AUT-495): a timed-out call no longer replays on the same model — tenacity excludes
@@ -305,7 +308,7 @@ jobs:
               token = os.environ.get("GITHUB_TOKEN")
               repo = os.environ.get("GITHUB_REPOSITORY")
               pr = os.environ.get("PR_NUMBER")
-              if not (token and repo and pr):
+              if not (LABEL and token and repo and pr):
                   return
               base = f"https://api.github.com/repos/{repo}/issues/{pr}/labels"
               headers = {
@@ -341,12 +344,13 @@ jobs:
 
           def no_review(reason):
               sync_label(True)
+              label_note = f" -- applying {LABEL}" if LABEL else ""
+              summary_note = f" `{LABEL}` applied -- a human must review." if LABEL else ""
+              step_summary(f"AI review missing for this PR ({reason}).{summary_note}")
               if FAIL_ON_MISSING_REVIEW:
-                  print(f"PR-AGENT GATE FAILED: {reason} -- applying {LABEL}")
-                  step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+                  print(f"PR-AGENT GATE FAILED: {reason}{label_note}")
                   return 1
-              print(f"pr-agent gate: {reason} -- applying {LABEL} (fail_on_missing_review=false, advisory, exit 0)")
-              step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+              print(f"pr-agent gate: {reason}{label_note} (fail_on_missing_review=false, advisory, exit 0)")
               return 0
 
           def main():

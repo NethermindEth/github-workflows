@@ -15,7 +15,8 @@ pattern running in `citizen-automations` today.
    as `env_slug` (default `prod`). The gateway API base is hardcoded in the workflow
    (`https://litellm.nethermind.dev/v1`), not read from Infisical, so `LLM_BASE_URL` isn't needed
    either way. `OPENAI.KEY` tries `LITELLM_API_KEY` then `LLM_API_KEY`, so either naming works.
-3. **Label**: create a `needs-human-review` label on the repo (or pass a different `label` input).
+3. **Label**: create a `needs-human-review` label on the repo, pass a different `label` input, or
+   pass `label: ""` to disable labeling entirely.
 4. **Permissions**: the calling job must grant everything the reusable workflow declares
    (`id-token: write`, `pull-requests: write`, `issues: write`, `contents: read`), as in the
    examples below. A called workflow can never receive more `GITHUB_TOKEN` permissions than its
@@ -141,8 +142,10 @@ jobs:
   see AUT-427). `CONFIG.PROPAGATE_TOOL_ERRORS` is set so PR-Agent's own step fails loudly on an
   LLM error instead of swallowing it and exiting 0 with nothing to show. A real `security_concerns`
   finding always blocks; the "no judgable review" half of that can be relaxed to advisory-only
-  per caller via `fail_on_missing_review: false` (default `true`), for riding out a known gateway
-  outage without forking the workflow.
+  per caller via `fail_on_missing_review: false` (default `true`): the PR-Agent step then no
+  longer fails the job on an LLM error, timeout, or gateway spend cap, and the gate exits 0. Use
+  it where the check is not a required status check and infrastructure failures should not turn
+  PRs red.
 - Skips entirely for `dependabot[bot]` (no Infisical creds on those runs) -- your own
   deterministic CI checks are what gates dependency-bump PRs, not this workflow.
 - Never runs on fork PRs (no secrets, no gate there).
