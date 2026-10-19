@@ -54,7 +54,7 @@ on:
         required: false
         default: 5
       label:
-        description: "Label applied when the gate blocks or when no review could be judged"
+        description: "Label applied when the gate blocks or when no review could be judged; empty disables the label"
         type: string
         required: false
         default: "needs-human-review"
@@ -63,7 +63,8 @@ on:
           Fail the check when no judgable review was produced (LLM error, gateway outage,
           malformed output), not just on a real security_concerns finding. Default true (matches
           this workflow's fail-closed default). A consumer riding out a known gateway outage can
-          set false to drop that specific case to advisory-only (label still applied either way);
+          set false to drop that specific case to advisory-only (label still applied either way, unless
+          `label` is empty);
           a real security finding always fails regardless of this input.
         type: boolean
         required: false
@@ -305,7 +306,8 @@ jobs:
               token = os.environ.get("GITHUB_TOKEN")
               repo = os.environ.get("GITHUB_REPOSITORY")
               pr = os.environ.get("PR_NUMBER")
-              if not (token and repo and pr):
+              # An empty label must not reach the API: the DELETE below would target the whole labels list.
+              if not (LABEL and token and repo and pr):
                   return
               base = f"https://api.github.com/repos/{repo}/issues/{pr}/labels"
               headers = {
@@ -341,12 +343,14 @@ jobs:
 
           def no_review(reason):
               sync_label(True)
+              applying = f" -- applying {LABEL}" if LABEL else ""
+              summary = f"AI review missing for this PR ({reason})." + (f" `{LABEL}` applied -- a human must review." if LABEL else "")
               if FAIL_ON_MISSING_REVIEW:
-                  print(f"PR-AGENT GATE FAILED: {reason} -- applying {LABEL}")
-                  step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+                  print(f"PR-AGENT GATE FAILED: {reason}{applying}")
+                  step_summary(summary)
                   return 1
-              print(f"pr-agent gate: {reason} -- applying {LABEL} (fail_on_missing_review=false, advisory, exit 0)")
-              step_summary(f"AI review missing for this PR ({reason}). `{LABEL}` applied -- a human must review.")
+              print(f"pr-agent gate: {reason}{applying} (fail_on_missing_review=false, advisory, exit 0)")
+              step_summary(summary)
               return 0
 
           def main():

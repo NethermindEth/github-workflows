@@ -15,7 +15,8 @@ pattern running in `citizen-automations` today.
    as `env_slug` (default `prod`). The gateway API base is hardcoded in the workflow
    (`https://litellm.nethermind.dev/v1`), not read from Infisical, so `LLM_BASE_URL` isn't needed
    either way. `OPENAI.KEY` tries `LITELLM_API_KEY` then `LLM_API_KEY`, so either naming works.
-3. **Label**: create a `needs-human-review` label on the repo (or pass a different `label` input).
+3. **Label**: create a `needs-human-review` label on the repo, pass a different `label` input, or pass
+   `label: ''` to apply no label. The check result does not change.
 4. **Permissions**: the calling job must grant everything the reusable workflow declares
    (`id-token: write`, `pull-requests: write`, `issues: write`, `contents: read`), as in the
    examples below. A called workflow can never receive more `GITHUB_TOKEN` permissions than its
