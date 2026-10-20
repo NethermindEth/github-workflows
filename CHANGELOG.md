@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.1.2](https://github.com/NethermindEth/github-workflows/compare/v5.1.1...v5.1.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* **deps:** bump pre-commit from 4.6.2 to 4.7.0 in /.github/requirements in the all-pip group ([#209](https://github.com/NethermindEth/github-workflows/issues/209)) ([3927343](https://github.com/NethermindEth/github-workflows/commit/39273436f8fd0a1bffa1bf0ae4fc96ddcfa69567))
+* **deps:** bump pre-commit in /.github/requirements in the all-pip group ([3927343](https://github.com/NethermindEth/github-workflows/commit/39273436f8fd0a1bffa1bf0ae4fc96ddcfa69567))
+* **deps:** bump the all-github-actions group with 3 updates ([#210](https://github.com/NethermindEth/github-workflows/issues/210)) ([41fd2f4](https://github.com/NethermindEth/github-workflows/commit/41fd2f4d3c2ac8bc3af7305355c319feca6c83ae))
+
 ## [5.1.1](https://github.com/NethermindEth/github-workflows/compare/v5.1.0...v5.1.1) (2026-10-19)
 
 
