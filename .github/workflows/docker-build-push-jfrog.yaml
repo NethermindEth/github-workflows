@@ -176,7 +176,7 @@ jobs:
       - name: Install JFrog CLI
         if: ${{ inputs.push }}
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@68c0efdc951dd2359bbbfa15c48bc67b3ae8e4d6 # v5.2.0
+        uses: jfrog/setup-jfrog-cli@1e584506871998c267b7c100c02628a5b9c81db6 # v5.3.0
         env:
           JF_URL: https://${{ inputs.jfrog_url }}
         with:
@@ -195,7 +195,7 @@ jobs:
       # Same OIDC-to-Infisical action ai-review.yaml uses; nothing long-lived is stored.
       - name: Load build secrets from Infisical
         if: ${{ inputs.infisical_secret_path != '' }}
-        uses: NethermindEth/github-workflows/get_infisical_secrets@e0fad164abb5ef88a6aa54b21e84996fa62b5e19
+        uses: NethermindEth/github-workflows/get_infisical_secrets@4744882a310642a29c9d979d8fd0c1edb66d9858
         with:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
