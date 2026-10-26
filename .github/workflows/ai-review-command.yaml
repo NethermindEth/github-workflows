@@ -126,6 +126,14 @@ jobs:
       # OPENAI.KEY tries both key names Infisical uses across different secret paths: the shared
       # /apps/litellm/code-reviewer-prod folder names it LITELLM_API_KEY, a per-repo
       # /github/workflows/<repo> folder (citizen-automations' convention) names it LLM_API_KEY.
+      - name: Join the tailnet
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: CLIENT_ID_AI_REVIEW_COMMAND
+          audience: api.tailscale.com/CLIENT_ID_AI_REVIEW_COMMAND
+          tags: tag:ci-litellm
+          version: 1.104.1
+
       - name: PR-Agent -- run the commented command
         uses: the-pr-agent/pr-agent@efdde4afe14aa401a3889012c7f3e9ef3081a430 # v0.49.0
         env:
