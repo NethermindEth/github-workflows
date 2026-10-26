@@ -175,6 +175,14 @@ jobs:
       # read to the PR's BASE branch: this is a required check with no human approval gate, so
       # reading config from the head branch would let a PR weaken its own review and green-light
       # itself.
+      - name: Join the tailnet
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: CLIENT_ID_AI_REVIEW
+          audience: api.tailscale.com/CLIENT_ID_AI_REVIEW
+          tags: tag:ci-litellm
+          version: 1.104.1
+
       - name: PR-Agent review
         id: pr_agent
         if: github.actor != inputs.skip_actor
