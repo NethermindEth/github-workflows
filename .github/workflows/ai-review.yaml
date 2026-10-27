@@ -115,7 +115,7 @@ jobs:
         # Full owner/repo reference, not a relative path: a reusable workflow called from a
         # DIFFERENT repo resolves "./x" against the CALLER's checkout, not this repo, so a
         # relative path here would silently fail to resolve for every external caller.
-        uses: NethermindEth/github-workflows/get_infisical_secrets@4744882a310642a29c9d979d8fd0c1edb66d9858
+        uses: NethermindEth/github-workflows/get_infisical_secrets@3aa8d07182110ddd5c7f3bad9d746a1db58f6f8c
         with:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
