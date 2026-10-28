@@ -93,6 +93,10 @@ permissions:
   issues: write # PR-Agent's own review labels (e.g. "possible security issue")
   contents: read
 
+env:
+  TAILSCALE_CLIENT_IDS: >-
+    {"NethermindEth/access-gateway": "TBD-access-gateway", "NethermindEth/access-policy": "TBD-access-policy", "NethermindEth/citizen-automations": "TBD-citizen-automations", "NethermindEth/juno": "TBD-juno", "NethermindEth/nethermind": "TBD-nethermind", "NethermindEth/platform-access-request-slack-bot": "TBD-platform-access-request-slack-bot", "NethermindEth/review-radar": "TBD-review-radar"}
+
 jobs:
   ai-review:
     # Same-repo PRs only: forks get no secrets and a read-only token, so this must never run there.
@@ -178,8 +182,8 @@ jobs:
       - name: Join the tailnet
         uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
         with:
-          oauth-client-id: CLIENT_ID_AI_REVIEW
-          audience: api.tailscale.com/CLIENT_ID_AI_REVIEW
+          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
           tags: tag:ci-litellm
           version: 1.104.1
 

@@ -32,6 +32,11 @@ pattern running in `citizen-automations` today.
    protection silently never enforces the gate -- verify the exact string in the PR's checks list
    before relying on it.
 
+6. **Tailnet**: LiteLLM is only reachable over the tailnet, and the workflow joins it before
+   calling LiteLLM. Tailscale only lets it in when your job calls the workflow `@main` (not a tag
+   or SHA) from a repo it knows, so ask the AI platform team to add your repo first. Your repo
+   needs no Tailscale secrets or steps of its own.
+
 No `.pr_agent.toml` is required -- pass `model`, `fallback_model`, `extra_instructions`, and
 `num_max_findings` as workflow inputs (see below). **Confirmed empirically (AUT-427): these env
 vars win over a repo-local `.pr_agent.toml` for every key they both set** -- a toml is NOT a safe
