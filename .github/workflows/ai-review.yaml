@@ -95,7 +95,7 @@ permissions:
 
 env:
   TAILSCALE_CLIENT_IDS: >-
-    {"NethermindEth/access-gateway": "TBD-access-gateway", "NethermindEth/access-policy": "TBD-access-policy", "NethermindEth/citizen-automations": "TBD-citizen-automations", "NethermindEth/juno": "TBD-juno", "NethermindEth/nethermind": "TBD-nethermind", "NethermindEth/platform-access-request-slack-bot": "TBD-platform-access-request-slack-bot", "NethermindEth/review-radar": "TBD-review-radar"}
+    {"NethermindEth/access-gateway": "TBD-access-gateway", "NethermindEth/access-policy": "TBD-access-policy", "NethermindEth/citizen-automations": "TBD-citizen-automations", "NethermindEth/juno": "TBD-juno", "NethermindEth/nethermind": "TBD-nethermind", "NethermindEth/platform-access-request-slack-bot": "TBD-platform-access-request-slack-bot", "NethermindEth/review-radar": "TBD-review-radar", "NethermindEth/transaction-control-audit": "TBD-transaction-control-audit", "NethermindEth/transaction-control-gate": "TBD-transaction-control-gate", "NethermindEth/transaction-control-middleware": "TBD-transaction-control-middleware", "NethermindEth/transaction-control-relay": "TBD-transaction-control-relay"}
 
 jobs:
   ai-review:
