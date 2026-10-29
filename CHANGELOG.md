@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.1.2](https://github.com/NethermindEth/github-workflows/compare/v5.1.1...v5.1.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* **ai-review:** export only the gateway key from Infisical ([#215](https://github.com/NethermindEth/github-workflows/issues/215)) ([662fd46](https://github.com/NethermindEth/github-workflows/commit/662fd4671205405e248c36d2b9e09d0dd1fd58c2))
+* **deps:** bump filelock from 4.1.1 to 4.2.1 in /.github/requirements ([#214](https://github.com/NethermindEth/github-workflows/issues/214)) ([0d69dda](https://github.com/NethermindEth/github-workflows/commit/0d69dda736907c42f3f968f1603d1ee388bdcc20))
+* **deps:** bump pre-commit from 4.6.2 to 4.7.0 in /.github/requirements in the all-pip group ([#209](https://github.com/NethermindEth/github-workflows/issues/209)) ([3927343](https://github.com/NethermindEth/github-workflows/commit/39273436f8fd0a1bffa1bf0ae4fc96ddcfa69567))
+* **deps:** bump pre-commit in /.github/requirements in the all-pip group ([3927343](https://github.com/NethermindEth/github-workflows/commit/39273436f8fd0a1bffa1bf0ae4fc96ddcfa69567))
+* **deps:** bump the all-github-actions group with 3 updates ([#210](https://github.com/NethermindEth/github-workflows/issues/210)) ([41fd2f4](https://github.com/NethermindEth/github-workflows/commit/41fd2f4d3c2ac8bc3af7305355c319feca6c83ae))
+* **deps:** bump the all-github-actions group with 4 updates ([#213](https://github.com/NethermindEth/github-workflows/issues/213)) ([06793b9](https://github.com/NethermindEth/github-workflows/commit/06793b9e42df7fbf1ce1e0daca61652f5070efb2))
+* **deps:** bump virtualenv from 21.14.7 to 21.14.13 in /.github/requirements ([#212](https://github.com/NethermindEth/github-workflows/issues/212)) ([72f020c](https://github.com/NethermindEth/github-workflows/commit/72f020ce58c2c3db18e6858d39f6e3b797b4cac3))
+* **deps:** bump virtualenv in /.github/requirements ([72f020c](https://github.com/NethermindEth/github-workflows/commit/72f020ce58c2c3db18e6858d39f6e3b797b4cac3))
+
 ## [5.1.1](https://github.com/NethermindEth/github-workflows/compare/v5.1.0...v5.1.1) (2026-10-19)
 
 
