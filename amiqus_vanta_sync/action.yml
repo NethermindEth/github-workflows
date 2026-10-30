@@ -1,0 +1,115 @@
+name: Sync Amiqus Background Checks to Vanta
+description: >-
+  Read personnel records from Amiqus and push them into Vanta's background check
+  connector, so background check evidence lands on the Vanta People page automatically.
+
+inputs:
+  amiqus-token:
+    description: Amiqus ID API personal or OAuth access token
+    required: true
+  vanta-client-id:
+    description: Vanta private integration OAuth client ID
+    required: true
+  vanta-client-secret:
+    description: Vanta private integration OAuth client secret
+    required: true
+  vanta-resource-id:
+    description: Resource ID generated for the background check resource in the Vanta developer console
+    required: true
+  apply:
+    description: >-
+      'true' writes to Vanta. Anything else is a dry run that reports the payload
+      without calling Vanta. Defaults to a dry run because the Vanta sync deletes
+      every background check missing from the payload.
+    required: false
+    default: "false"
+  email-domains:
+    description: Comma separated email domains; only records whose client email matches are synced (empty means no domain filter)
+    required: false
+    default: ""
+  reference-regex:
+    description: Optional regex the Amiqus record reference must match
+    required: false
+    default: ""
+  statuses:
+    description: Comma separated Amiqus record statuses to include (empty means all)
+    required: false
+    default: ""
+  include-archived:
+    description: "'true' also syncs records belonging to archived Amiqus clients"
+    required: false
+    default: "false"
+  min-records:
+    description: Refuse to apply a payload with fewer records than this
+    required: false
+    default: "1"
+  amiqus-base-url:
+    description: Amiqus ID API base URL
+    required: false
+    default: https://id.amiqus.co/api/v2
+  amiqus-app-url:
+    description: Amiqus web app base URL, used to build the per-record externalUrl shown in Vanta
+    required: false
+    default: https://id.amiqus.co
+  vanta-base-url:
+    description: >-
+      Vanta API base URL. Use https://api.vanta.com for US, EU and AU tenants -
+      the regional hostnames only redirect and break authentication.
+    required: false
+    default: https://api.vanta.com
+
+runs:
+  using: composite
+  steps:
+    - name: Sync Amiqus records to Vanta
+      shell: bash
+      env:
+        AMIQUS_TOKEN: ${{ inputs.amiqus-token }}
+        VANTA_CLIENT_ID: ${{ inputs.vanta-client-id }}
+        VANTA_CLIENT_SECRET: ${{ inputs.vanta-client-secret }}
+        VANTA_RESOURCE_ID: ${{ inputs.vanta-resource-id }}
+        INPUT_APPLY: ${{ inputs.apply }}
+        INPUT_EMAIL_DOMAINS: ${{ inputs.email-domains }}
+        INPUT_REFERENCE_REGEX: ${{ inputs.reference-regex }}
+        INPUT_STATUSES: ${{ inputs.statuses }}
+        INPUT_INCLUDE_ARCHIVED: ${{ inputs.include-archived }}
+        INPUT_MIN_RECORDS: ${{ inputs.min-records }}
+        INPUT_AMIQUS_BASE_URL: ${{ inputs.amiqus-base-url }}
+        INPUT_AMIQUS_APP_URL: ${{ inputs.amiqus-app-url }}
+        INPUT_VANTA_BASE_URL: ${{ inputs.vanta-base-url }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+
+        if ! command -v python3 &>/dev/null; then
+          echo "::error::python3 not found on this runner."
+          exit 1
+        fi
+
+        if [[ ! "${INPUT_MIN_RECORDS}" =~ ^[0-9]+$ ]]; then
+          echo "::error::min-records must be a non-negative integer, got '${INPUT_MIN_RECORDS}'."
+          exit 1
+        fi
+
+        ARGS=(
+          --amiqus-base-url "${INPUT_AMIQUS_BASE_URL}"
+          --amiqus-app-url "${INPUT_AMIQUS_APP_URL}"
+          --vanta-base-url "${INPUT_VANTA_BASE_URL}"
+          --email-domains "${INPUT_EMAIL_DOMAINS}"
+          --reference-regex "${INPUT_REFERENCE_REGEX}"
+          --statuses "${INPUT_STATUSES}"
+          --min-records "${INPUT_MIN_RECORDS}"
+        )
+
+        if [[ "${INPUT_INCLUDE_ARCHIVED}" == "true" ]]; then
+          ARGS+=(--include-archived)
+        fi
+
+        if [[ "${INPUT_APPLY}" == "true" ]]; then
+          ARGS+=(--apply)
+          echo "Running in APPLY mode - Vanta background checks will be replaced by this payload."
+        else
+          echo "Running in DRY RUN mode - no write to Vanta. Set apply: 'true' to sync."
+        fi
+
+        python3 "${ACTION_PATH}/sync.py" "${ARGS[@]}"
