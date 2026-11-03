@@ -101,7 +101,7 @@ jobs:
 
       - name: Install JFrog CLI
         id: jfrog
-        uses: jfrog/setup-jfrog-cli@1a84ddcff2d475751d8392ef6d7ecb478a7cfe53 # v5.3.1
+        uses: jfrog/setup-jfrog-cli@6ed45ef1a24199bd4c94d3fd55a7e8cb7e45985d # v5.3.2
         env:
           JF_URL: https://${{ inputs.jfrog_url }}
         with:
@@ -115,7 +115,7 @@ jobs:
           password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Setup oras cli
-        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
+        uses: oras-project/setup-oras@5e2f2482b30b0cb3e14e67f89a80c88c659a7c63 # v2.0.3
 
       - name: Promote Images
         id: promote
