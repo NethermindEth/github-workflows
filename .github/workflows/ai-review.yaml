@@ -95,7 +95,7 @@ permissions:
 
 env:
   TAILSCALE_CLIENT_IDS: >-
-    {"NethermindEth/access-gateway": "TBD-access-gateway", "NethermindEth/access-policy": "TBD-access-policy", "NethermindEth/citizen-automations": "TBD-citizen-automations", "NethermindEth/juno": "TBD-juno", "NethermindEth/nethermind": "TBD-nethermind", "NethermindEth/platform-access-request-slack-bot": "TBD-platform-access-request-slack-bot", "NethermindEth/review-radar": "TBD-review-radar", "NethermindEth/transaction-control-audit": "TBD-transaction-control-audit", "NethermindEth/transaction-control-gate": "TBD-transaction-control-gate", "NethermindEth/transaction-control-middleware": "TBD-transaction-control-middleware", "NethermindEth/transaction-control-relay": "TBD-transaction-control-relay"}
+    {"NethermindEth/access-gateway": "Tzg4RXC1AA21CNTRL-k2NWnzmbWt11CNTRL", "NethermindEth/access-policy": "Tzg4RXC1AA21CNTRL-kVneaz1YC911CNTRL", "NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kUyoVrFxC111CNTRL", "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-kD3EstX2QD11CNTRL", "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kiK8ANNh3Y11CNTRL", "NethermindEth/platform-access-request-slack-bot": "Tzg4RXC1AA21CNTRL-kaCmhYUfj821CNTRL", "NethermindEth/review-radar": "Tzg4RXC1AA21CNTRL-k7aeqXS5aL11CNTRL", "NethermindEth/transaction-control-audit": "Tzg4RXC1AA21CNTRL-kzacX7tWF511CNTRL", "NethermindEth/transaction-control-gate": "Tzg4RXC1AA21CNTRL-kHB3t7Mb9X11CNTRL", "NethermindEth/transaction-control-middleware": "Tzg4RXC1AA21CNTRL-kLjyvgxJBn11CNTRL", "NethermindEth/transaction-control-relay": "Tzg4RXC1AA21CNTRL-kfRCfFXvat11CNTRL"}
 
 jobs:
   ai-review:
@@ -187,6 +187,16 @@ jobs:
           echo "model=${model}" >> "$GITHUB_OUTPUT"
           echo "Diff is ${bytes} bytes (threshold ${DIFF_BYTES_THRESHOLD}): using ${model}"
 
+      - name: Join the tailnet
+        continue-on-error: true
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          tags: tag:ci-litellm
+          version: 1.104.1
+          sha256sum: 108d1d96ecf410d305571e173516f27038f870919a9b89c914a167c6d33a4528
+
       # Runs /review + /describe (and /improve on demand via the command workflow). No
       # .pr_agent.toml is required in the caller repo -- every setting PR-Agent needs is passed as
       # an env var (its config loader accepts literal SECTION.KEY names, e.g. OPENAI.KEY below).
@@ -198,14 +208,6 @@ jobs:
       # read to the PR's BASE branch: this is a required check with no human approval gate, so
       # reading config from the head branch would let a PR weaken its own review and green-light
       # itself.
-      - name: Join the tailnet
-        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
-        with:
-          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
-          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
-          tags: tag:ci-litellm
-          version: 1.104.1
-
       - name: PR-Agent review
         id: pr_agent
         if: github.actor != inputs.skip_actor

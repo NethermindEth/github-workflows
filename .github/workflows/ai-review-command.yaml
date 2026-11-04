@@ -65,7 +65,7 @@ permissions:
 
 env:
   TAILSCALE_CLIENT_IDS: >-
-    {"NethermindEth/access-gateway": "TBD-access-gateway", "NethermindEth/access-policy": "TBD-access-policy", "NethermindEth/citizen-automations": "TBD-citizen-automations", "NethermindEth/juno": "TBD-juno", "NethermindEth/nethermind": "TBD-nethermind", "NethermindEth/platform-access-request-slack-bot": "TBD-platform-access-request-slack-bot", "NethermindEth/review-radar": "TBD-review-radar", "NethermindEth/transaction-control-audit": "TBD-transaction-control-audit", "NethermindEth/transaction-control-gate": "TBD-transaction-control-gate", "NethermindEth/transaction-control-middleware": "TBD-transaction-control-middleware", "NethermindEth/transaction-control-relay": "TBD-transaction-control-relay"}
+    {"NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kHB2vvWWTU11CNTRL", "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-k7fUbWWUQr11CNTRL", "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kenqhchpCy11CNTRL"}
 
 jobs:
   command:
@@ -122,6 +122,16 @@ jobs:
           base_ref=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName --jq .baseRefName)
           echo "base_ref=${base_ref}" >> "$GITHUB_OUTPUT"
 
+      - name: Join the tailnet
+        continue-on-error: true
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          tags: tag:ci-litellm
+          version: 1.104.1
+          sha256sum: 108d1d96ecf410d305571e173516f27038f870919a9b89c914a167c6d33a4528
+
       # Same config surface as ai-review.yaml's PR-Agent review step -- an on-demand /review or
       # /improve must behave identically to the automatic one, and without OPENAI.API_BASE +
       # CONFIG.TEMPERATURE this would call the real OpenAI API with a gateway key and fail auth.
@@ -130,14 +140,6 @@ jobs:
       # OPENAI.KEY tries both key names Infisical uses across different secret paths: the shared
       # /apps/litellm/code-reviewer-prod folder names it LITELLM_API_KEY, a per-repo
       # /github/workflows/<repo> folder (citizen-automations' convention) names it LLM_API_KEY.
-      - name: Join the tailnet
-        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
-        with:
-          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
-          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
-          tags: tag:ci-litellm
-          version: 1.104.1
-
       - name: PR-Agent -- run the commented command
         uses: the-pr-agent/pr-agent@efdde4afe14aa401a3889012c7f3e9ef3081a430 # v0.49.0
         env:
