@@ -93,6 +93,10 @@ permissions:
   issues: write # PR-Agent's own review labels (e.g. "possible security issue")
   contents: read
 
+env:
+  TAILSCALE_CLIENT_IDS: >-
+    {"NethermindEth/access-gateway": "Tzg4RXC1AA21CNTRL-k2NWnzmbWt11CNTRL", "NethermindEth/access-policy": "Tzg4RXC1AA21CNTRL-kVneaz1YC911CNTRL", "NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kUyoVrFxC111CNTRL", "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-kD3EstX2QD11CNTRL", "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kiK8ANNh3Y11CNTRL", "NethermindEth/platform-access-request-slack-bot": "Tzg4RXC1AA21CNTRL-kaCmhYUfj821CNTRL", "NethermindEth/review-radar": "Tzg4RXC1AA21CNTRL-k7aeqXS5aL11CNTRL", "NethermindEth/transaction-control-audit": "Tzg4RXC1AA21CNTRL-kzacX7tWF511CNTRL", "NethermindEth/transaction-control-gate": "Tzg4RXC1AA21CNTRL-kHB3t7Mb9X11CNTRL", "NethermindEth/transaction-control-middleware": "Tzg4RXC1AA21CNTRL-kLjyvgxJBn11CNTRL", "NethermindEth/transaction-control-relay": "Tzg4RXC1AA21CNTRL-kfRCfFXvat11CNTRL"}
+
 jobs:
   ai-review:
     # Same-repo PRs only: forks get no secrets and a read-only token, so this must never run there.
@@ -182,6 +186,16 @@ jobs:
           fi
           echo "model=${model}" >> "$GITHUB_OUTPUT"
           echo "Diff is ${bytes} bytes (threshold ${DIFF_BYTES_THRESHOLD}): using ${model}"
+
+      - name: Join the tailnet
+        continue-on-error: true
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          tags: tag:ci-litellm
+          version: 1.104.1
+          sha256sum: 108d1d96ecf410d305571e173516f27038f870919a9b89c914a167c6d33a4528
 
       # Runs /review + /describe (and /improve on demand via the command workflow). No
       # .pr_agent.toml is required in the caller repo -- every setting PR-Agent needs is passed as
