@@ -126,13 +126,13 @@ jobs:
           env-slug: ${{ inputs.env_slug }}
           secret-path: ${{ inputs.secret_path }}
           export-type: file
-          file-path: ../ai-review-secrets.env
+          file-path: .ai-review-secrets.env
 
       - name: Export only the gateway key
         if: github.actor != inputs.skip_actor
         run: |
           set -euo pipefail
-          file="${GITHUB_WORKSPACE}/../ai-review-secrets.env"
+          file="${GITHUB_WORKSPACE}/.ai-review-secrets.env"
           trap 'rm -f "$file"' EXIT
           found=0
           while IFS= read -r line; do
