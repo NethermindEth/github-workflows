@@ -33,13 +33,21 @@ pattern running in `citizen-automations` today.
    before relying on it.
 
 6. **Tailnet**: LiteLLM only answers on the tailnet. The workflow joins it before the review with
-   a per-repo Tailscale identity, which the AI platform team adds along with your repo's client id
-   in the workflow's `TAILSCALE_CLIENT_IDS` map. Ask them before adopting, and say if you also use
-   the slash-command workflow, since it needs its own identity. The identity only matches a job
-   that calls the workflow `@main` (not a tag or SHA, so keep Dependabot or Renovate from pinning
-   it), on `pull_request` or `issue_comment`, on a GitHub-hosted runner. Anything else skips the
-   join, and the review fails with a LiteLLM timeout. Your repo needs no Tailscale secrets or
-   steps of its own.
+   a per-repo Tailscale identity, which you add in two pull requests:
+   1. In `NethermindEth/terragrunt`, add your repo and its id (`gh api repos/NethermindEth/<repo>
+      --jq .id`) to `ai_review_callers` in `saas/tailscale/tailnet/terragrunt.hcl`, and to the
+      `ai-review-command` list if you use the slash commands. If
+      `gh api repos/NethermindEth/<repo>/actions/oidc/customization/sub` shows
+      `"use_immutable_subject": true`, add the repo to `ai_review_immutable_subject` too.
+   2. Once that merges, the `saas_tailscale` apply on main prints a client id per identity under
+      `federated_identity_client_ids`: `ci-<repo>-ai-review`, plus `ci-<repo>-ai-review-command`
+      for the slash commands. Add each as `"NethermindEth/<repo>": "<client id>"` to
+      `TAILSCALE_CLIENT_IDS` in the matching workflow here.
+
+   The identity only matches a job that calls the workflow `@main` (not a tag or SHA, so keep
+   Dependabot or Renovate from pinning it), on `pull_request` or `issue_comment`, on a
+   GitHub-hosted runner. Anything else skips the join, and the review fails with a LiteLLM
+   timeout. Your repo needs no Tailscale secrets or steps of its own.
 
 No `.pr_agent.toml` is required -- pass `model`, `fallback_model`, `extra_instructions`, and
 `num_max_findings` as workflow inputs (see below). **Confirmed empirically: these env
