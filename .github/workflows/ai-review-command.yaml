@@ -63,6 +63,14 @@ permissions:
   issues: write
   contents: read
 
+env:
+  TAILSCALE_CLIENT_IDS: |-
+    {
+      "NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kHB2vvWWTU11CNTRL",
+      "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-k7fUbWWUQr11CNTRL",
+      "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kenqhchpCy11CNTRL"
+    }
+
 jobs:
   command:
     # Only: a PR comment (not a plain issue), a slash-command, from someone with write access --
@@ -85,12 +93,12 @@ jobs:
           env-slug: ${{ inputs.env_slug }}
           secret-path: ${{ inputs.secret_path }}
           export-type: file
-          file-path: ../ai-review-secrets.env
+          file-path: .ai-review-secrets.env
 
       - name: Export only the gateway key
         run: |
           set -euo pipefail
-          file="${GITHUB_WORKSPACE}/../ai-review-secrets.env"
+          file="${GITHUB_WORKSPACE}/.ai-review-secrets.env"
           trap 'rm -f "$file"' EXIT
           found=0
           while IFS= read -r line; do
@@ -117,6 +125,15 @@ jobs:
         run: |
           base_ref=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName --jq .baseRefName)
           echo "base_ref=${base_ref}" >> "$GITHUB_OUTPUT"
+
+      - name: Join the tailnet
+        continue-on-error: true
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
+          tags: tag:ci-litellm
+          version: latest
 
       # Same config surface as ai-review.yaml's PR-Agent review step -- an on-demand /review or
       # /improve must behave identically to the automatic one, and without OPENAI.API_BASE +
