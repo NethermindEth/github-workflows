@@ -32,13 +32,17 @@ pattern running in `citizen-automations` today.
    protection silently never enforces the gate -- verify the exact string in the PR's checks list
    before relying on it.
 
-6. **Tailnet**: LiteLLM is only reachable over the tailnet, and the workflow joins it before
-   calling LiteLLM. Tailscale only lets it in when your job calls the workflow `@main` (not a tag
-   or SHA) from a repo it knows, so ask the AI platform team to add your repo first. Your repo
-   needs no Tailscale secrets or steps of its own.
+6. **Tailnet**: LiteLLM only answers on the tailnet. The workflow joins it before the review with
+   a per-repo Tailscale identity, which the AI platform team adds along with your repo's client id
+   in the workflow's `TAILSCALE_CLIENT_IDS` map. Ask them before adopting, and say if you also use
+   the slash-command workflow, since it needs its own identity. The identity only matches a job
+   that calls the workflow `@main` (not a tag or SHA, so keep Dependabot or Renovate from pinning
+   it), on `pull_request` or `issue_comment`, on a GitHub-hosted runner. Anything else skips the
+   join, and the review fails with a LiteLLM timeout. Your repo needs no Tailscale secrets or
+   steps of its own.
 
 No `.pr_agent.toml` is required -- pass `model`, `fallback_model`, `extra_instructions`, and
-`num_max_findings` as workflow inputs (see below). **Confirmed empirically (AUT-427): these env
+`num_max_findings` as workflow inputs (see below). **Confirmed empirically: these env
 vars win over a repo-local `.pr_agent.toml` for every key they both set** -- a toml is NOT a safe
 way to override anything this workflow already covers (model, temperature, gateway routing,
 review-requirement flags, suggestion thresholds, etc.), regardless of what PR-Agent's own docs
@@ -105,7 +109,7 @@ The `concurrency` block above is **your responsibility to declare**, not the reu
 concurrency groups are scoped per-repository, not per-workflow-file, so if the reusable workflow
 declared its own group with the same name your caller uses, the two would collide and the job
 could get cancelled before it's even scheduled (this is exactly the bug that hit citizen-automations
-during migration -- see AUT-427). Pick a group name unique to your own workflow file/trigger.
+during migration). Pick a group name unique to your own workflow file/trigger.
 
 Optional on-demand slash commands (`/review`, `/improve`, `/describe`, `/ask "..."` posted as a
 PR comment), in a separate workflow file so a comment doesn't trigger your full CI suite:
@@ -143,8 +147,8 @@ jobs:
   outage, malformed output). Everything else (bugs, /improve suggestions, the 0-100 score) is
   advisory. Fails **closed** in every case where something went wrong -- a broken pipeline should
   be visibly red, never silently green with just a label (this workflow used to fail open on a
-  missing review; that let a fully broken model config pass CI for a while before anyone noticed,
-  see AUT-427). `CONFIG.PROPAGATE_TOOL_ERRORS` is set so PR-Agent's own step fails loudly on an
+  missing review; that let a fully broken model config pass CI for a while before anyone noticed).
+  `CONFIG.PROPAGATE_TOOL_ERRORS` is set so PR-Agent's own step fails loudly on an
   LLM error instead of swallowing it and exiting 0 with nothing to show. A real `security_concerns`
   finding always blocks; the "no judgable review" half of that can be relaxed to advisory-only
   per caller via `fail_on_missing_review: false` (default `true`): the PR-Agent step then no
