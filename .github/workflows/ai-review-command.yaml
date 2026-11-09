@@ -133,8 +133,7 @@ jobs:
           oauth-client-id: ${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
           audience: api.tailscale.com/${{ fromJSON(env.TAILSCALE_CLIENT_IDS)[github.repository] }}
           tags: tag:ci-litellm
-          version: 1.104.1
-          sha256sum: 108d1d96ecf410d305571e173516f27038f870919a9b89c914a167c6d33a4528
+          version: latest
 
       # Same config surface as ai-review.yaml's PR-Agent review step -- an on-demand /review or
       # /improve must behave identically to the automatic one, and without OPENAI.API_BASE +
