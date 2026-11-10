@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.2.0](https://github.com/NethermindEth/github-workflows/compare/v5.1.2...v5.2.0) (2026-11-10)
+
+
+### Features
+
+* **ai-review:** join the tailnet before calling LiteLLM [AUT-663] ([#218](https://github.com/NethermindEth/github-workflows/issues/218)) ([6700e28](https://github.com/NethermindEth/github-workflows/commit/6700e284cd45f1e13db0650b1c5a4bbd66884e7a))
+
+
+### Bug Fixes
+
+* **deps:** bump the all-github-actions group with 3 updates ([#220](https://github.com/NethermindEth/github-workflows/issues/220)) ([ef16809](https://github.com/NethermindEth/github-workflows/commit/ef1680949dece0451c93836ae98ca5e28a33f6c4))
+* **deps:** bump the all-github-actions group with 5 updates ([#216](https://github.com/NethermindEth/github-workflows/issues/216)) ([ee8b535](https://github.com/NethermindEth/github-workflows/commit/ee8b535649aa4b295d611414fc0e6bcf0a936c84))
+
 ## [5.1.2](https://github.com/NethermindEth/github-workflows/compare/v5.1.1...v5.1.2) (2026-10-29)
 
 
