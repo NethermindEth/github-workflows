@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.3.0](https://github.com/NethermindEth/github-workflows/compare/v5.2.0...v5.3.0) (2026-11-11)
+
+
+### Features
+
+* **ai-review:** add agentarena-app to the command workflow's tailnet map ([#221](https://github.com/NethermindEth/github-workflows/issues/221)) ([9eab2f1](https://github.com/NethermindEth/github-workflows/commit/9eab2f13992fe0c74d7372713605dc5893e28fa8))
+* **docker:** replace xray push gate with trivy ([#223](https://github.com/NethermindEth/github-workflows/issues/223)) ([80a7eab](https://github.com/NethermindEth/github-workflows/commit/80a7eabf23b1d2d79cec689bc538198f8c906d05))
+
 ## [5.2.0](https://github.com/NethermindEth/github-workflows/compare/v5.1.2...v5.2.0) (2026-11-10)
 
 
