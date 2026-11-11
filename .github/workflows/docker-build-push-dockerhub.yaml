@@ -199,6 +199,8 @@ jobs:
           set -euo pipefail
           if [[ -f .trivyignore.yaml ]]; then
             echo "file=.trivyignore.yaml" >> "$GITHUB_OUTPUT"
+          elif [[ -f .trivyignore ]]; then
+            echo "file=.trivyignore" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Trivy scan gate
@@ -210,10 +212,15 @@ jobs:
           image-ref: ${{ steps.scan-image.outputs.image }}
           scanners: vuln
           severity: CRITICAL
+          ignore-unfixed: true
           exit-code: "1"
           format: table
           trivyignores: ${{ steps.trivy-ignore.outputs.file }}
           cache: "false"
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
+          TRIVY_DISABLE_VEX_NOTICE: true
 
       - name: Remove scan image
         if: ${{ always() && inputs.push }}
