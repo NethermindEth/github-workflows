@@ -71,6 +71,16 @@ on:
         type: boolean
         default: false
         required: false
+      trivy_severity:
+        description: "Comma-separated Trivy severities that fail the push gate. Must include CRITICAL; uppercase only"
+        type: string
+        default: "CRITICAL"
+        required: false
+      trivy_ignore_unfixed:
+        description: "Ignore vulnerabilities that have no fix yet in the Trivy push gate"
+        type: boolean
+        default: true
+        required: false
       dockerfile_path:
         description: "Path to Dockerfile"
         type: string
@@ -229,6 +239,44 @@ jobs:
           fi
           echo "platform=${platform}" >> "$GITHUB_OUTPUT"
 
+      - name: Validate Trivy severity
+        if: ${{ inputs.push }}
+        id: trivy-severity
+        env:
+          INPUT_SEVERITY: ${{ inputs.trivy_severity }}
+        run: |
+          set -euo pipefail
+          cleaned="${INPUT_SEVERITY//[[:space:]]/}"
+          if [[ -z "${cleaned}" ]]; then
+            echo "::error::trivy_severity must not be empty"
+            exit 1
+          fi
+          if [[ "${cleaned}" == ,* || "${cleaned}" == *, || "${cleaned}" == *,,* ]]; then
+            echo "::error::trivy_severity contains an empty entry"
+            exit 1
+          fi
+          IFS=',' read -r -a levels <<< "${cleaned}"
+          seen=","
+          for level in "${levels[@]}"; do
+            case "${level}" in
+              UNKNOWN|LOW|MEDIUM|HIGH|CRITICAL) ;;
+              *)
+                echo "::error::trivy_severity contains a value that is not one of UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL (uppercase only)"
+                exit 1
+                ;;
+            esac
+            if [[ "${seen}" == *",${level},"* ]]; then
+              echo "::error::trivy_severity lists ${level} more than once"
+              exit 1
+            fi
+            seen+="${level},"
+          done
+          if [[ "${seen}" != *",CRITICAL,"* ]]; then
+            echo "::error::trivy_severity must include CRITICAL"
+            exit 1
+          fi
+          echo "severity=${cleaned}" >> "$GITHUB_OUTPUT"
+
       - name: Name scan image
         if: ${{ inputs.push }}
         id: scan-image
@@ -286,8 +334,8 @@ jobs:
         with:
           image-ref: ${{ steps.scan-image.outputs.image }}
           scanners: vuln
-          severity: CRITICAL
-          ignore-unfixed: true
+          severity: ${{ steps.trivy-severity.outputs.severity }}
+          ignore-unfixed: ${{ inputs.trivy_ignore_unfixed }}
           exit-code: "1"
           format: table
           trivyignores: ${{ steps.trivy-ignore.outputs.file }}
@@ -305,8 +353,16 @@ jobs:
 
       - name: Fail on Trivy findings
         if: ${{ inputs.push && steps.trivy.outcome == 'failure' }}
+        env:
+          TRIVY_SEVERITY: ${{ steps.trivy-severity.outputs.severity }}
+          TRIVY_IGNORE_UNFIXED: ${{ inputs.trivy_ignore_unfixed }}
         run: |
-          echo "::error::Trivy gate failed: CRITICAL vulnerabilities found (or the scan did not complete). Image not pushed. Fix them or add an entry with expired_at to .trivyignore.yaml."
+          if [[ "${TRIVY_IGNORE_UNFIXED}" == "true" ]]; then
+            unfixed="vulnerabilities without a fix are ignored"
+          else
+            unfixed="vulnerabilities without a fix count too"
+          fi
+          echo "::error::Trivy gate failed: found ${TRIVY_SEVERITY} vulnerabilities (${unfixed}), or the scan did not complete. Image not pushed. Fix them or add an entry with expired_at to .trivyignore.yaml."
           exit 1
 
       - name: Build and push

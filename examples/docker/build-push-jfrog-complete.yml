@@ -48,6 +48,8 @@ jobs:
       platforms: "linux/amd64,linux/arm64"
       context: "."
       setup-qemu: false
+      trivy_severity: "CRITICAL"
+      trivy_ignore_unfixed: true
       dockerfile_path: "Dockerfile"
       docker_secrets: ""
       docker_secret_envs: ""
