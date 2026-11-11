@@ -31,21 +31,6 @@ Builds whose stages `FROM` a private registry image, or that consume a secret, s
 `cache_from: ""` and `cache_to: ""`: the default `type=gha,mode=max` exports every stage's layers
 into the repository's Actions cache, which any workflow run in the repository can restore.
 
-#### Xray scan gate
-
-When `push` is true, the workflow builds the first entry of `platforms` into the local daemon and
-runs `jf docker scan --watches iac-all-repos --fail=true` before anything is pushed. A Critical
-vulnerability or malicious package (the `iac-security-critical` policy) fails the job with exit 3;
-any scan error (auth, Xray unavailable, missing watch) also fails the job. Other platforms are not
-scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule
-scoped to the scan image's artifact name, `xray-scan-<repository name, lowercased>` (tagged with the
-commit SHA). A repository name that is not a valid Docker image name fails the job.
-
-The scan does not use the caller's project token, which Xray rejects. It requests a GitHub OIDC
-token with audience `jfrog-xray-scan` and exchanges it at the `github-nethermindeth-xray` provider
-for a 300-second token scoped to the `xray-scanner` group only (managed in
-`terraform-saas-artifactory`). If the exchange fails, the job fails before anything is pushed.
-
 
 ### Docker Hub
 
@@ -55,11 +40,6 @@ The workflow for building and publishing Docker images to Docker Hub.
 
 **Simple Example:** [`examples/docker/build-push-dockerhub-simple.yml`](./build-push-dockerhub-simple.yml)
 **Complete Example:** [`examples/docker/build-push-dockerhub-complete.yml`](./build-push-dockerhub-complete.yml)
-
-#### Xray scan gate
-
-When `push` is true the workflow runs the same Xray scan gate as the JFrog workflow before pushing
-(see above). Callers need `id-token: write`, which this workflow already required.
 
 
 ## Promote
