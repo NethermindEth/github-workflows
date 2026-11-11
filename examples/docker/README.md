@@ -31,20 +31,35 @@ Builds whose stages `FROM` a private registry image, or that consume a secret, s
 `cache_from: ""` and `cache_to: ""`: the default `type=gha,mode=max` exports every stage's layers
 into the repository's Actions cache, which any workflow run in the repository can restore.
 
-#### Xray scan gate
+#### Trivy scan gate
 
 When `push` is true, the workflow builds the first entry of `platforms` into the local daemon and
-runs `jf docker scan --watches iac-all-repos --fail=true` before anything is pushed. A Critical
-vulnerability or malicious package (the `iac-security-critical` policy) fails the job with exit 3;
-any scan error (auth, Xray unavailable, missing watch) also fails the job. Other platforms are not
-scanned. There is no input to skip the gate; accept a specific finding with an Xray ignore rule
-scoped to the scan image's artifact name, `xray-scan-<repository name, lowercased>` (tagged with the
-commit SHA). A repository name that is not a valid Docker image name fails the job.
+scans it with Trivy (`vuln` scanner) before anything is pushed. Any CRITICAL vulnerability with a
+fix fails the job and the image is not pushed (unfixed ones are ignored by default); other platforms
+are not scanned. There is no input to skip the gate.
+The scan image is removed from the daemon after the scan.
 
-The scan does not use the caller's project token, which Xray rejects. It requests a GitHub OIDC
-token with audience `jfrog-xray-scan` and exchanges it at the `github-nethermindeth-xray` provider
-for a 300-second token scoped to the `xray-scanner` group only (managed in
-`terraform-saas-artifactory`). If the exchange fails, the job fails before anything is pushed.
+Two inputs tune the gate: `trivy_severity` (default `CRITICAL`) is a comma-separated list of severities
+that fail the push, and `trivy_ignore_unfixed` (default `true`) skips vulnerabilities that have no fix
+yet. `trivy_severity` can only widen the gate: it must include `CRITICAL`, uppercase, from
+`UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL`, with no duplicates, otherwise the job fails before building.
+
+```yaml
+with:
+  trivy_severity: "HIGH,CRITICAL"
+  trivy_ignore_unfixed: false
+```
+
+To accept a specific finding, add it to a `.trivyignore.yaml` at the repository root, always with an
+expiry so it comes back for review (a legacy `.trivyignore` is still honored when no `.yaml` exists,
+but cannot expire entries):
+
+```yaml
+vulnerabilities:
+  - id: CVE-2025-12345
+    statement: No fix released, not reachable from our code
+    expired_at: 2026-12-31
+```
 
 
 ### Docker Hub
@@ -56,10 +71,10 @@ The workflow for building and publishing Docker images to Docker Hub.
 **Simple Example:** [`examples/docker/build-push-dockerhub-simple.yml`](./build-push-dockerhub-simple.yml)
 **Complete Example:** [`examples/docker/build-push-dockerhub-complete.yml`](./build-push-dockerhub-complete.yml)
 
-#### Xray scan gate
+#### Trivy scan gate
 
-When `push` is true the workflow runs the same Xray scan gate as the JFrog workflow before pushing
-(see above). Callers need `id-token: write`, which this workflow already required.
+When `push` is true the workflow runs the same Trivy scan gate as the JFrog workflow before pushing
+(see above), including the `.trivyignore.yaml` handling.
 
 
 ## Promote
