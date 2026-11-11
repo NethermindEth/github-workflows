@@ -66,6 +66,7 @@ permissions:
 env:
   TAILSCALE_CLIENT_IDS: |-
     {
+      "NethermindEth/agentarena-app": "Tzg4RXC1AA21CNTRL-kxbvPPTtx421CNTRL",
       "NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kHB2vvWWTU11CNTRL",
       "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-k7fUbWWUQr11CNTRL",
       "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kenqhchpCy11CNTRL"
