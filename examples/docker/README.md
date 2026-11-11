@@ -31,6 +31,23 @@ Builds whose stages `FROM` a private registry image, or that consume a secret, s
 `cache_from: ""` and `cache_to: ""`: the default `type=gha,mode=max` exports every stage's layers
 into the repository's Actions cache, which any workflow run in the repository can restore.
 
+#### Trivy scan gate
+
+When `push` is true, the workflow builds the first entry of `platforms` into the local daemon and
+scans it with Trivy (`vuln` scanner) before anything is pushed. Any CRITICAL vulnerability fails the
+job and the image is not pushed; other platforms are not scanned. There is no input to skip the gate.
+The scan image is removed from the daemon after the scan.
+
+To accept a specific finding, add it to a `.trivyignore.yaml` at the repository root, always with an
+expiry so it comes back for review:
+
+```yaml
+vulnerabilities:
+  - id: CVE-2025-12345
+    statement: No fix released, not reachable from our code
+    expired_at: 2026-12-31
+```
+
 
 ### Docker Hub
 
@@ -40,6 +57,11 @@ The workflow for building and publishing Docker images to Docker Hub.
 
 **Simple Example:** [`examples/docker/build-push-dockerhub-simple.yml`](./build-push-dockerhub-simple.yml)
 **Complete Example:** [`examples/docker/build-push-dockerhub-complete.yml`](./build-push-dockerhub-complete.yml)
+
+#### Trivy scan gate
+
+When `push` is true the workflow runs the same Trivy scan gate as the JFrog workflow before pushing
+(see above), including the `.trivyignore.yaml` handling.
 
 
 ## Promote

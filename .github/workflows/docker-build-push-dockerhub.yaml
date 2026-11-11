@@ -141,6 +141,93 @@ jobs:
           chmod +x "$SCRIPT_PATH"
           bash "$SCRIPT_PATH"
 
+      - name: Select scan platform
+        if: ${{ inputs.push }}
+        id: scan-platform
+        env:
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          platform="${INPUT_PLATFORMS%%,*}"
+          platform="${platform//[[:space:]]/}"
+          if [[ ! "${platform}" =~ ^[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?$ ]]; then
+            echo "::error::Invalid platform '${platform}' in platforms input"
+            exit 1
+          fi
+          echo "platform=${platform}" >> "$GITHUB_OUTPUT"
+
+      - name: Name scan image
+        if: ${{ inputs.push }}
+        id: scan-image
+        run: |
+          set -euo pipefail
+          repo="$(printf '%s' "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "${repo}" =~ ^[a-z0-9]+((\.|_|__|-+)[a-z0-9]+)*$ ]]; then
+            echo "::error::Repository name '${repo}' is not a valid Docker image name component"
+            exit 1
+          fi
+          echo "image=trivy-scan-${repo}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU for scan build
+        if: ${{ inputs.push && inputs.setup-qemu }}
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - name: Set up Docker Buildx for scan build
+        if: ${{ inputs.push }}
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image for scan
+        if: ${{ inputs.push }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ inputs.context }} # zizmor: ignore[template-injection]
+          file: ${{ inputs.dockerfile_path }}
+          platforms: ${{ steps.scan-platform.outputs.platform }}
+          tags: ${{ steps.scan-image.outputs.image }}
+          load: true
+          push: false
+          secrets: ${{ inputs.docker_secrets }}
+          secret-envs: ${{ inputs.docker_secret_envs }}
+          secret-files: ${{ inputs.docker_secret_files }}
+          ulimit: ${{ inputs.docker_ulimit }}
+          build-args: ${{ inputs.docker_build_args }}
+
+      - name: Find Trivy ignore file
+        if: ${{ inputs.push }}
+        id: trivy-ignore
+        run: |
+          set -euo pipefail
+          if [[ -f .trivyignore.yaml ]]; then
+            echo "file=.trivyignore.yaml" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trivy scan gate
+        if: ${{ inputs.push }}
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.scan-image.outputs.image }}
+          version: v0.76.2
+          scanners: vuln
+          severity: CRITICAL
+          exit-code: "1"
+          format: table
+          trivyignores: ${{ steps.trivy-ignore.outputs.file }}
+          cache: "false"
+
+      - name: Remove scan image
+        if: ${{ always() && inputs.push }}
+        env:
+          SCAN_IMAGE: ${{ steps.scan-image.outputs.image }}
+        run: docker image rm --force "${SCAN_IMAGE}" || true
+
+      - name: Fail on Trivy findings
+        if: ${{ inputs.push && steps.trivy.outcome == 'failure' }}
+        run: |
+          echo "::error::Trivy gate failed: CRITICAL vulnerabilities found (or the scan did not complete). Image not pushed. Fix them or add an entry with expired_at to .trivyignore.yaml."
+          exit 1
+
       - name: Build and push
         uses: NethermindEth/github-action-image-build-and-push@361ce6e98f238b169b2000a7224ec1d467cc6506
         with:
