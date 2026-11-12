@@ -67,6 +67,8 @@ env:
   TAILSCALE_CLIENT_IDS: |-
     {
       "NethermindEth/agentarena-app": "Tzg4RXC1AA21CNTRL-kxbvPPTtx421CNTRL",
+      "NethermindEth/agentarena-arbiter": "Tzg4RXC1AA21CNTRL-k6uyVWdYhn11CNTRL",
+      "NethermindEth/agentarena-system-agents-orchestrator": "Tzg4RXC1AA21CNTRL-kuZK4RkdfB11CNTRL",
       "NethermindEth/citizen-automations": "Tzg4RXC1AA21CNTRL-kHB2vvWWTU11CNTRL",
       "NethermindEth/juno": "Tzg4RXC1AA21CNTRL-k7fUbWWUQr11CNTRL",
       "NethermindEth/nethermind": "Tzg4RXC1AA21CNTRL-kenqhchpCy11CNTRL"
