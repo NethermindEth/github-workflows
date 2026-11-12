@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.4.0](https://github.com/NethermindEth/github-workflows/compare/v5.3.0...v5.4.0) (2026-11-12)
+
+
+### Features
+
+* **ai-review:** add two agentarena repos to the command tailnet map ([#224](https://github.com/NethermindEth/github-workflows/issues/224)) ([de76de1](https://github.com/NethermindEth/github-workflows/commit/de76de12480280eb093d2b7eeb866ead7a1f4d7e))
+
 ## [5.3.0](https://github.com/NethermindEth/github-workflows/compare/v5.2.0...v5.3.0) (2026-11-11)
 
 
