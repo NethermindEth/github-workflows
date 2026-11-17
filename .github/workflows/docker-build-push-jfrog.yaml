@@ -205,7 +205,7 @@ jobs:
       # Same OIDC-to-Infisical action ai-review.yaml uses; nothing long-lived is stored.
       - name: Load build secrets from Infisical
         if: ${{ inputs.infisical_secret_path != '' }}
-        uses: NethermindEth/github-workflows/get_infisical_secrets@c019847cfad6e01a8d910580fc8ca8872355753f
+        uses: NethermindEth/github-workflows/get_infisical_secrets@ac05603195977b43df9e6826fe1fabc5d5c18d6c
         with:
           identity-id: ${{ secrets.infisical_identity_id }}
           project-id: ${{ secrets.infisical_project_id }}
